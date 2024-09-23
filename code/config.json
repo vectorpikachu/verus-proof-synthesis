@@ -1,0 +1,17 @@
+{
+    "aoai_api_base": [
+	"<Your LLM API EndPoint>"
+    ],
+    "aoai_api_version": "<Your LLM model version>",
+    "aoai_api_key": [
+	    "<Your LLM API Key>"
+    ],
+    "aoai_max_retries": 5,
+    "max_token": 2048,
+    "aoai_generation_model": "gpt-4o",
+    "aoai_debug_model": "gpt-4o",
+    "verus_path": "<Absolute path to your verus>",
+    "example_path": "<Absolute path to example folder>",
+    "lemma_path": "<Absolute path to lemma folder>",
+    "util_path": "<Absolute path to util folder>"
+}
