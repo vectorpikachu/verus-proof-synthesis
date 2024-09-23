@@ -418,7 +418,7 @@ def insert_lemma_func(code, lemma_names, lemma_path):
         input_file = os.path.join(lemma_path, name)
         lemma_code = open(input_file).read()
         lemma_func_dict = {lemma_name: lemma_code}
-    code = insert_proof_func(code, lemma_func_dict)
+        code = insert_proof_func(code, lemma_func_dict)
     return code
     
 def insert_proof_func(code, proof_func_dict):
