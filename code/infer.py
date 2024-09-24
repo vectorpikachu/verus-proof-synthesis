@@ -1,3 +1,7 @@
+# Copyright (c) Microsoft Corporation. #
+# Licensed under the MIT license.      #
+
+
 import openai
 from openai import AzureOpenAI, OpenAI
 import time
