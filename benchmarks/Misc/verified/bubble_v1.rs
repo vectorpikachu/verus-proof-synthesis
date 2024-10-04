@@ -45,7 +45,6 @@ verus! {
                     nums.set(j, temp);
                     proof {
                         r = r.update(j - 1, r[j as int]).update(j as int, r[j - 1]);
-                        assert(is_reorder_of(r, nums@, old(nums)@));
                     }
                 }
                 j -= 1;
