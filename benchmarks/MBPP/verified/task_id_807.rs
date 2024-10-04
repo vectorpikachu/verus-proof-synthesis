@@ -22,7 +22,6 @@ fn find_first_odd(arr: &Vec<u32>) -> (index: Option<usize>)
         },
 {
     let input_len = arr.len();
-    assert(arr@.take(0int).filter(|x: u32| x % 2 != 0) == Seq::<u32>::empty());
     let mut index = 0;
     while index < arr.len()
         invariant
@@ -37,7 +36,6 @@ fn find_first_odd(arr: &Vec<u32>) -> (index: Option<usize>)
         index += 1;
     }
     assert(arr@ == arr@.take(input_len as int));
-    assert(forall|k: int| 0 <= k < arr.len() ==> (arr[k] % 2 == 0));
     None
 }
 

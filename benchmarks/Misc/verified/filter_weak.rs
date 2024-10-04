@@ -15,7 +15,6 @@ ensures
     
     while (i < xlen) 
         invariant 
-            0 <= i <= xlen,
             x@.len() == xlen,  // always specify the length of vectors used in the loop
             forall |k:int| 0 <= k < y.len() ==> y[k] % 3 == 0 && x@.contains(y@[k]),
     { 

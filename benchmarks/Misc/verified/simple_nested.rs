@@ -26,13 +26,9 @@ pub fn simple_nested(a: &mut Vec<i32>, b: &Vec<i32>, N: i32) -> (sum: i32)
         while (j < i)
             invariant 
                 0 <= i < N,
-                N <= 0x3FFF_FFFF,
                 0 <= j <= i,
                 a.len() == N,  // always specify the length of vectors used in the loop
-                b.len() == N,  // always specify the length of vectors used in the loop
-                forall |k:int| k <= #[trigger] b[k] <= k + 1,
                 i + 1 - j <= a[i as int] <= i + 2 - j,
-                i <= sum <= 2*i,
         {
             a.set(i, a[i] - 1);
             j = j + 1;

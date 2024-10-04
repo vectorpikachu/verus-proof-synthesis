@@ -12,7 +12,6 @@ pub fn myfun(a: &mut Vec<u32>, N: u32) -> (sum: u32)
 	let mut i: usize = 0;
 	while (i < N as usize)
 	invariant 
-	    i<=N,
 	    a.len()==N,
 	    forall|j:int| 0<=j<i ==> a[j]<=2,
 	{
@@ -22,7 +21,6 @@ pub fn myfun(a: &mut Vec<u32>, N: u32) -> (sum: u32)
 		i = i + 1;
 	}
 
-    assert(forall|j:int| 0<=j<N ==> a[j]<=2);
 
 	i = 0;
     let mut sum: u32 = 0;

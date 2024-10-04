@@ -38,7 +38,6 @@ fn find_first_occurrence(arr: &Vec<i32>, target: i32) -> (index: Option<usize>)
     let mut index = 0;
     while index < arr.len()
         invariant
-            0 <= index <= arr.len(),
             forall|k: int| 0 <= k < index ==> arr[k] != target,
     {
         if arr[index] == target {

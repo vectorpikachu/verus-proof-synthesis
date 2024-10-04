@@ -42,7 +42,6 @@ fn sum_range_list(arr: &Vec<i64>, start: usize, end: usize) -> (sum: i128)
 
     while index < _end
         invariant
-            0 <= start <= _end,
             start <= _end <= arr.len(),
             start <= index <= _end,
             sum == sum_to(arr@.subrange(start as int, index as int)),
@@ -50,7 +49,6 @@ fn sum_range_list(arr: &Vec<i64>, start: usize, end: usize) -> (sum: i128)
                 start <= j <= index ==> (i64::MIN * index <= (sum_to(
                     #[trigger] arr@.subrange(start as int, j),
                 )) <= i64::MAX * index),
-            i64::MIN * index <= sum <= i64::MAX * index,
     {
         assert(arr@.subrange(start as int, index as int) =~= arr@.subrange(
             start as int,
@@ -59,8 +57,6 @@ fn sum_range_list(arr: &Vec<i64>, start: usize, end: usize) -> (sum: i128)
         sum = sum + arr[index] as i128;
         index += 1;
     }
-    assert(index == _end);
-    assert(arr@.subrange(start as int, _end as int) == arr@.subrange(start as int, index as int));
     sum
 }
 

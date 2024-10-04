@@ -46,7 +46,6 @@ fn max_length_list(seq: &Vec<Vec<i32>>) -> (max_list: &Vec<i32>)
     {
         if ((seq[index]).len() > max_list.len()) {
             max_list = &seq[index];
-            assert(max_list@ =~= seq[index as int]@);
         }
         index += 1;
     }

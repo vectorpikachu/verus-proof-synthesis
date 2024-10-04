@@ -33,7 +33,6 @@ fn element_wise_subtract(arr1: &Vec<i32>, arr2: &Vec<i32>) -> (result: Vec<i32>)
     let mut index = 0;
     while index < arr1.len()
         invariant
-            0 <= index <= arr1.len(),
             arr1.len() == arr2.len(),
             0 <= index <= arr2.len(),
             output_arr.len() == index,

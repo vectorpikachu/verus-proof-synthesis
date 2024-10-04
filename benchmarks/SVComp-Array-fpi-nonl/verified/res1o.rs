@@ -15,7 +15,6 @@ pub fn myfun(a: &mut Vec<i32>, b: &mut Vec<i32>, sum: &mut Vec<i32>, N: i32)
 	let mut i: usize = 0;
 	while (i < N as usize)
 		invariant
-			i <= N as usize,
 			a.len() == N,
 			forall |k:int| 0 <= k < i ==> a[k] == 1,
 	{
@@ -31,7 +30,6 @@ pub fn myfun(a: &mut Vec<i32>, b: &mut Vec<i32>, sum: &mut Vec<i32>, N: i32)
 			a.len() == N,
 			sum[0] == i, // Corrected invariant
 			forall |k:int| 0 <= k < N ==> a[k] == 1,
-			N < 1000,
 	{
 		sum.set(0, sum[0] + a[i]);
 		i = i + 1;
@@ -40,8 +38,6 @@ pub fn myfun(a: &mut Vec<i32>, b: &mut Vec<i32>, sum: &mut Vec<i32>, N: i32)
 	i = 0;
 	while (i < N as usize)
 		invariant
-			i <= N as usize,
-			sum.len() == 1,
 			b.len() == N,
 			forall |k:int| 0 <= k < i ==> b[k] == 1,
 	{

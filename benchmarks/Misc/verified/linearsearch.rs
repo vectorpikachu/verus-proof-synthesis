@@ -19,8 +19,6 @@ ensures
         forall |k: int| 0 <= k < i ==> #[trigger]nums[k]@!= target,
         0 <= i <= nums@.len(),
     ensures
-        0 <= i <= nums@.len(),
-        forall |k: int| 0 <= k < i ==> (#[trigger]nums@[k])!= target,
         0 <= i < nums@.len() ==> (#[trigger]nums@[i as int]) == target,
     {
         if nums[i] == target {

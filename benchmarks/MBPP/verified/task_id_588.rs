@@ -59,7 +59,6 @@ fn difference_max_min(arr: &Vec<i32>) -> (diff: i32)
         index += 1;
         assert(arr@.subrange(0, index - 1 as int) == arr@.subrange(0, index as int).drop_last());
     }
-    assert(index == arr@.len());
     assert(arr@ == arr@.subrange(0, index as int));
     max_val - min_val
 }

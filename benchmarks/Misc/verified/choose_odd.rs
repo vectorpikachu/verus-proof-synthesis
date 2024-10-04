@@ -12,7 +12,6 @@ fn choose_odd(v: &Vec<u64>) -> (odd_index: usize)
     
     while (j < v.len())
     invariant 
-        j<=v.len(),
         forall |q:int| 0<=q<j ==> #[trigger] v[q]%2!=1,
     {
         if (v[j] % 2 == 1) {

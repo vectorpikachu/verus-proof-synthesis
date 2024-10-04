@@ -26,7 +26,6 @@ fn contains(arr: &Vec<i32>, key: i32) -> (result: bool)
     let mut i = 0;
     while i < arr.len()
         invariant
-            0 <= i <= arr.len(),
             forall|m: int| 0 <= m < i ==> (arr[m] != key),
     {
         if (arr[i] == key) {
@@ -51,8 +50,6 @@ fn shared_elements(list1: &Vec<i32>, list2: &Vec<i32>) -> (shared: Vec<i32>)
     let mut index = 0;
     while index < list1.len()
         invariant
-            0 <= index <= list1.len(),
-            shared.len() == shared_arr_len,
             forall|i: int|
                 0 <= i < shared.len() ==> (list1@.contains(#[trigger] shared[i]) && list2@.contains(
                     #[trigger] shared[i],

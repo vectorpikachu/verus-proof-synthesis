@@ -23,7 +23,6 @@ fn max_difference(arr: &Vec<i32>) -> (diff: i32)
     let mut index = 1;
     while index < arr.len()
         invariant
-            1 <= index <= arr.len(),
             i32::MIN / 2 < min_val < i32::MAX / 2,
             i32::MIN / 2 < max_val < i32::MAX / 2,
             min_val <= max_val,
