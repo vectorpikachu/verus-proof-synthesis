@@ -3,17 +3,14 @@ fn main() {}
 verus!{
 pub fn havoc_inline_post(v: &mut Vec<u32>, a: u32, b: bool)
     requires 
-        forall |k:int| 0 <= k < old(v).len() ==> old(v)[k] == 0,
-        a == 10,
+        forall |k:int| 0 <= k < old(v).len() ==> old(v)[k] > 0,
+        a > 0,
         b == false,
 {  
-    let mut a: u32 = 0;
-
     // Variables a and v are havocked. Their values are randomly reset, but their new values follow the following assumptions.
     assume(10 < a < 20);
     assume(forall |k:int| 0 <= k < v.len() ==> v[k] == 1);
 
-    a = 2*a;
     let c: bool = !b;
     let mut idx: usize = v.len();
     while (idx > 0)
@@ -23,7 +20,7 @@ pub fn havoc_inline_post(v: &mut Vec<u32>, a: u32, b: bool)
     }
     
     proof {  // inline postcondition
-        assert(20 < a < 40);
+        assert(20 < 2*a < 40);
         assert(forall |k:int| 0 <= k < v.len() ==> v[k] == 1 + a);
         assert(c == true);
     }
