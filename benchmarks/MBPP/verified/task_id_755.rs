@@ -53,12 +53,10 @@ fn second_smallest(numbers: &Vec<i32>) -> (indices: (
     if numbers[1] < numbers[0] {
         min_index = 1;
         second_min_index = 0;
-        assert(numbers[min_index as int] < numbers[second_min_index as int]);
     }
     let mut index = 2;
     while index < numbers.len()
         invariant
-            numbers.len() >= 2,
             0 <= index <= numbers.len(),
             0 <= min_index < index,
             0 <= second_min_index < index,
@@ -70,22 +68,15 @@ fn second_smallest(numbers: &Vec<i32>) -> (indices: (
         if numbers[index] < numbers[min_index] {
             second_min_index = min_index;
             min_index = index;
-            assert(numbers[min_index as int] <= numbers[second_min_index as int]);
         } else if numbers[index] < numbers[second_min_index] {
             second_min_index = index;
-            assert(numbers[min_index as int] <= numbers[second_min_index as int]);
         }
         index += 1;
-        assert(numbers[min_index as int] <= numbers[second_min_index as int]);
-        assert(forall|k: int| 0 <= k < index ==> numbers[k] >= numbers[min_index as int]);
         assert(forall|k: int|
             0 <= k < index && k != min_index ==> numbers[k] >= numbers[second_min_index as int]);
     }
-    assert(forall|k: int| 0 <= k < index ==> numbers[k] >= numbers[min_index as int]);
     assert(forall|k: int|
         0 <= k < index && k != min_index ==> numbers[k] >= numbers[second_min_index as int]);
-    assert(index == numbers.len());
-    assert(numbers[min_index as int] <= numbers[second_min_index as int]);
     assert(forall|k: int|
         0 <= k < numbers.len() && k != min_index && numbers[min_index as int] == min_spec(numbers@)
             ==> (numbers[k] >= numbers[second_min_index as int]));

@@ -32,9 +32,7 @@ fn rotate_right(list: &Vec<u32>, n: usize) -> (new_list: Vec<u32>)
         ),
 {
     let rotation = n % list.len();
-    assert(0 <= rotation < list.len());
     let split_index = list.len() - rotation;
-    assert(0 <= split_index <= list.len());
 
     let mut new_list = Vec::with_capacity(list.len());
 
@@ -51,7 +49,6 @@ fn rotate_right(list: &Vec<u32>, n: usize) -> (new_list: Vec<u32>)
     index = 0;
     while index < split_index
         invariant
-            list@.len() > 0,
             0 <= split_index <= list@.len(),
             0 <= index <= split_index,
             new_list@ =~= list@.subrange(split_index as int, list@.len() as int).add(

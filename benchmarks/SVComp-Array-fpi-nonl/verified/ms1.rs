@@ -13,7 +13,6 @@ pub fn myfun(a: &mut Vec<usize>, sum: &mut Vec<usize>, N: usize)
 	let mut i: usize = 0;
 	while (i < N as usize)
 		invariant
-			i <= N,
 			forall |k: int| 0<= k < i ==> a[k] == 0,
 			a.len() == N,
 	{
@@ -25,7 +24,6 @@ pub fn myfun(a: &mut Vec<usize>, sum: &mut Vec<usize>, N: usize)
 	
 	while (i < N as usize)
 		invariant
-			i <= N,
 			forall |k: int| 0<= k < N ==> a[k] == 0,
 			a.len() == N,
 			i > 0 ==> sum[0] == 0,

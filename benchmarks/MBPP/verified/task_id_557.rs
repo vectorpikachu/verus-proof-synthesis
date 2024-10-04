@@ -73,7 +73,6 @@ fn to_toggle_case(str1: &Vec<char>) -> (toggle_case: Vec<char>)
         } else {
             toggle_case.push(str1[index]);
         }
-        assert(toggle_case[index as int] == to_toggle_case_spec(str1[index as int]));
         index += 1;
 
     }

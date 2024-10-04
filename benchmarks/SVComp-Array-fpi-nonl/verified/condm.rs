@@ -12,7 +12,6 @@ pub fn myfun(a: &mut Vec<i32>, N: u32)
 
 	while (i < N as usize)
 		invariant
-			i <= N,
 			forall |k:int| 0 <= k < i ==> a[k] == 0,
 			a.len() == N,
 	{
@@ -23,7 +22,6 @@ pub fn myfun(a: &mut Vec<i32>, N: u32)
 	i = 0;
 	while (i < N as usize)
 		invariant
-			i <= N,
 			forall |k:int| 0 <= k < i ==> a[k] % 2 == N % 2,
 			forall |k:int| i <= k < N ==> a[k] == 0,
 			a.len() == N,

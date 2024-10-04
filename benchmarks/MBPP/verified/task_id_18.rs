@@ -50,7 +50,6 @@ fn contains(str: &Vec<char>, key: char) -> (result: bool)
     let mut i = 0;
     while i < str.len()
         invariant
-            0 <= i <= str.len(),
             forall|m: int| 0 <= m < i ==> (str[m] != key),
     {
         if (str[i] == key) {
@@ -78,9 +77,6 @@ fn remove_chars(str1: &Vec<char>, str2: &Vec<char>) -> (result: Vec<char>)
 
     while index < str1.len()
         invariant
-            0 <= index <= str1.len(),
-            output_str.len() <= index,
-            output_len == output_str.len(),
             forall|k: int|
                 0 <= k < output_str.len() ==> (str1@.contains(#[trigger] output_str[k])
                     && !str2@.contains(#[trigger] output_str[k])),

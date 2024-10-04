@@ -35,7 +35,6 @@ fn split_and_append(list: &Vec<i32>, n: usize) -> (new_list: Vec<i32>)
     let mut index = 0;
     while index < n
         invariant
-            list@.len() > 0,
             0 < n < list@.len(),
             0 <= index <= n,
             new_list@ =~= list@.subrange(n as int, list@.len() as int).add(

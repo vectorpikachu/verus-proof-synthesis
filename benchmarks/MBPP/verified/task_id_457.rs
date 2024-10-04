@@ -38,7 +38,6 @@ fn min_sublist(seq: &Vec<Vec<i32>>) -> (min_list: &Vec<i32>)
     {
         if ((seq[index]).len() < min_list.len()) {
             min_list = &seq[index];
-            assert(min_list@ =~= seq[index as int]@);
         }
         index += 1;
     }

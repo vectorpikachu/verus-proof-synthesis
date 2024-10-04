@@ -26,7 +26,6 @@ fn contains(arr: &Vec<i32>, key: i32) -> (result: bool)
     let mut i = 0;
     while i < arr.len()
         invariant
-            0 <= i <= arr.len(),
             forall|m: int| 0 <= m < i ==> (arr[m] != key),
     {
         if (arr[i] == key) {
@@ -51,8 +50,6 @@ fn intersection(arr1: &Vec<i32>, arr2: &Vec<i32>) -> (result: Vec<i32>)
     let mut index = 0;
     while index < arr1.len()
         invariant
-            0 <= index <= arr1.len(),
-            output_arr.len() == out_arr_len,  // new vector length inside the loop
             forall|i: int|
                 0 <= i < output_arr.len() ==> (arr1@.contains(#[trigger] output_arr[i])
                     && arr2@.contains(#[trigger] output_arr[i])),

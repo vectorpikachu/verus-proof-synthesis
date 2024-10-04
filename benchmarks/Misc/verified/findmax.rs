@@ -14,7 +14,6 @@ ensures
     let mut i = 1;
     while i < nums.len()
     invariant
-        0 <= i <= nums@.len(),
         forall |k: int| 0 <= k < i ==> nums@[k] <= max,
         exists |k: int| 0 <= k < i && nums@[k] == max,
     {

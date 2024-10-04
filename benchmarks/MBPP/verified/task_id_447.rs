@@ -30,7 +30,6 @@ fn cube_element(nums: &Vec<i32>) -> (cubed: Vec<i32>)
     let mut i = 0;
     while i < nums.len()
         invariant
-            0 <= i <= nums.len(),
             cubed_array@.len() == i,
             forall|k: int|
                 0 <= k < nums.len() ==> (i32::MIN <= #[trigger] nums[k] * #[trigger] nums[k]

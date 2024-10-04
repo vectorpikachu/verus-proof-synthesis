@@ -53,8 +53,6 @@ fn count_uppercase(text: &Vec<char>) -> (count: u64)
         assert(text@.subrange(0, index - 1 as int) == text@.subrange(0, index as int).drop_last());
 
     }
-    assert(count <= index);
-    assert(index == text@.len());
     assert(text@ == text@.subrange(0, index as int));
     count
 }

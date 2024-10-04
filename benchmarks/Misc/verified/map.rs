@@ -12,7 +12,6 @@ ensures
     let xlen: usize = x.len();
     while (i < xlen) 
         invariant 
-            0 <= i <= xlen,
             xlen == x.len(),  // always specify the length of vectors used in the loop
             forall |k:int| 0 <= k < i ==> #[trigger] x[k] == old(x)[k] + 4,
             forall |k:int| i <= k < xlen ==> x[k] == old(x)[k],

@@ -14,7 +14,6 @@ pub fn myfun(a: &mut Vec<i32>, sum: &mut Vec<i32>, N: i32)
 	let mut i: usize = 0;
 	while (i < N as usize)
 		invariant
-			i <= N,
 			forall |k:int| 0<= k < i ==> a[k] == k % 5,
 			a.len() == N,
 	{
