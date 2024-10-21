@@ -14,7 +14,7 @@ def main():
     # Parse arguments.
     parser = argparse.ArgumentParser(description='Verus Copilot')
     parser.add_argument('--config', default='config.json', help='Path to config file')
-    parser.add_argument('--mode', default='gen', help='Mode to run in (gen, refine)')
+    parser.add_argument('--mode', default='gen', help='Mode to run in (gen, repair)')
     parser.add_argument('--input', default='input.rs', help='Path to input file')
     parser.add_argument('--output', default='output.rs', help='Path to output file')
     parser.add_argument('--repair', default=10, type=int, help='Number of repair steps')
