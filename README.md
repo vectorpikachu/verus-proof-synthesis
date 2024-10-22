@@ -3,7 +3,8 @@
 This repository contains code for automated Verus proof synthesis.
 
 * `benchmarks`. This folder contains a number of Rust/Verus proof tasks.
-* `code`. This folder contains the python code that does proof synthesis for Verus
+* `code`. This folder contains the python code that does proof synthesis for Verus.
+* `utils/lynette`. This folder contains a Verus parser that is written to support Verus proof synthesis.
 
 # Usage
 
