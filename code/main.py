@@ -40,6 +40,12 @@ def main():
     if not os.path.isfile(args.config):
         logger.error('Config file does not exist')
         return
+
+    # Check if input file exists
+    if not os.path.isfile(args.input):
+        logger.error('Input file does not exist')
+        return
+
     config = json.load(open(args.config))
     config = AttrDict(config)
     verus.set_verus_path(config.verus_path)

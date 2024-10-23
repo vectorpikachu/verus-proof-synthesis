@@ -10,8 +10,8 @@
     "max_token": 2048,
     "aoai_generation_model": "gpt-4o",
     "aoai_debug_model": "gpt-4o",
-    "verus_path": "<Absolute path to your verus>",
-    "example_path": "<Absolute path to example folder>",
-    "lemma_path": "<Absolute path to lemma folder>",
-    "util_path": "<Absolute path to util folder>"
+    "verus_path": "<Absolute path to your verus, like C:\\Verus\\source\\target-verus\\release\\verus.exe>",
+    "example_path": "<Absolute path to example folder, like C:\\verus-proof-synthesis\\code\\examples>",
+    "lemma_path": "<Absolute path to lemma folder>, like C:\\verus-proof-synthesis\\code\\lemmas",
+    "util_path": "<Absolute path to util folder, like C:\\verus-proof-synthesis\\utils>"
 }
