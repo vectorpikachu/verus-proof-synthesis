@@ -2,12 +2,17 @@
 # Licensed under the MIT license.      #
 
 
-import sys
 import os
 import subprocess
 
+
 class Lynette:
-    meta_command = ["cargo", "run", "--manifest-path=../utils/lynette/source/Cargo.toml", "--"]
+    meta_command = [
+        "cargo",
+        "run",
+        "--manifest-path=../utils/lynette/source/Cargo.toml",
+        "--",
+    ]
     env = os.environ.copy()
     env["RUSTFLAGS"] = "-Awarnings"
 
@@ -22,8 +27,13 @@ class Lynette:
         return self.run(["code", "unimpl", file])
 
     def func_add(self, file1, file2, replace=False, funcs=[]):
-        return self.run(["func", "add", file1, file2, "--replace" if replace else ""] +
-                        ["--funcs"] + funcs if funcs else [])
+        return self.run(
+            ["func", "add", file1, file2, "--replace" if replace else ""]
+            + ["--funcs"]
+            + funcs
+            if funcs
+            else []
+        )
 
     def code_merge(self, file1, file2, merge_mode):
         pass
@@ -36,5 +46,6 @@ class Lynette:
 
     def code_detect_nonlinear(self, file):
         return self.run(["code", "detect-nl", file])
+
 
 lynette = Lynette()

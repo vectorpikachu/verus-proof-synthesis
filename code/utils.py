@@ -6,19 +6,19 @@ import sys
 import os
 import subprocess
 import re
-import time
 import difflib
 import json
 import tempfile
-from veval import VEval, VerusErrorType, VerusError, VerusErrorLabel
 from lynette import lynette
 
 
 DEBUG_SAFE_CODE_CHANGE = False
 
+
 class AttrDict(dict):
     def __getattr__(self, name):
         return self[name]
+
 
 def remove_comment(code):
     """
@@ -31,11 +31,14 @@ def remove_comment(code):
         new_code += line + "\n"
     return new_code
 
+
 def get_nonlinear_lines(code, logger):
     """
     Get all lines that contain nonlinear arithmetic operations
     """
-    code_f = tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="veurs_nonlinear_", suffix=".rs")
+    code_f = tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix="veurs_nonlinear_", suffix=".rs"
+    )
     code_f.write(code)
     code_f.close()
 
@@ -49,7 +52,7 @@ def get_nonlinear_lines(code, logger):
             code_lines = code.splitlines()
             # TODO: the first element of the tuple is the type of the expression(currently limited to "invariant" or "assert")
             for ex_type, (st, ed) in nl_lines:
-                text = "\n".join(code_lines[st-1:ed])
+                text = "\n".join(code_lines[st - 1 : ed])
                 if ex_type == "assert" and "nonlinear_arith" not in text:
                     # Only return the lines unlabelled with nonlinear_arith
                     output_lines.append((st, ed, text))
@@ -57,21 +60,37 @@ def get_nonlinear_lines(code, logger):
                     output_lines.append((st, ed, text))
             return output_lines
         except json.JSONDecodeError as e:
-            logger.error(f"Error in decoding nonlinear arithmetic operations: {m.stdout}")
+            logger.error(
+                f"Error in decoding nonlinear arithmetic operations: {m.stdout}"
+            )
             return []
     else:
         return []
 
-def code_change_is_safe(origin, changed, verus_path, logger, target_mode = True, util_path = "../utils", inter=False, debug=True):
+
+def code_change_is_safe(
+    origin,
+    changed,
+    verus_path,
+    logger,
+    target_mode=True,
+    util_path="../utils",
+    inter=False,
+    debug=True,
+):
     if debug and DEBUG_SAFE_CODE_CHANGE:
         logger.warning("Debug mode is on, skip code change checking")
         return True
 
-    orig_f = tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="llm4v_orig", suffix=".rs")
+    orig_f = tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix="llm4v_orig", suffix=".rs"
+    )
     orig_f.write(origin)
     orig_f.close()
 
-    changed_f = tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="llm4v_changed", suffix=".rs")
+    changed_f = tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix="llm4v_changed", suffix=".rs"
+    )
     changed_f.write(changed)
     changed_f.close()
 
@@ -83,8 +102,11 @@ def code_change_is_safe(origin, changed, verus_path, logger, target_mode = True,
     elif target_mode:
         opts = ["-t"]
 
-    verus_compare_cmd = ["cargo", "run", "--manifest-path", cargopath, "--",
-                        "compare"] + opts + [orig_f.name, changed_f.name]
+    verus_compare_cmd = (
+        ["cargo", "run", "--manifest-path", cargopath, "--", "compare"]
+        + opts
+        + [orig_f.name, changed_f.name]
+    )
 
     m = subprocess.run(verus_compare_cmd, capture_output=True, text=True)
     # os.unlink(orig_f.name)
@@ -107,15 +129,29 @@ def code_change_is_safe(origin, changed, verus_path, logger, target_mode = True,
 
     return None
 
+
 def get_func_body(code, fname, util_path=None):
-    orig_f = tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="veurs_copilot_", suffix=".rs")
+    orig_f = tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix="veurs_copilot_", suffix=".rs"
+    )
     orig_f.write(code)
     orig_f.close()
 
     cargopath = util_path + "/lynette/source/Cargo.toml"
 
-    lynette_extract_cmd = ["cargo", "run", "--manifest-path", cargopath, "--",
-                            "func", "extract", "-b", "-f", fname, orig_f.name]
+    lynette_extract_cmd = [
+        "cargo",
+        "run",
+        "--manifest-path",
+        cargopath,
+        "--",
+        "func",
+        "extract",
+        "-b",
+        "-f",
+        fname,
+        orig_f.name,
+    ]
 
     m = subprocess.run(lynette_extract_cmd, capture_output=True, text=True)
     os.unlink(orig_f.name)
@@ -123,6 +159,7 @@ def get_func_body(code, fname, util_path=None):
     if m.returncode == 0:
         return m.stdout.strip()
     return ""
+
 
 def check_changed_code_v2(origin, changed):
     """
@@ -136,10 +173,10 @@ def check_changed_code_v2(origin, changed):
     use_parentheses = False
     for i, d in enumerate(diff):
         if not safe:
-            if (d[1:].strip().startswith("invariant")):
+            if d[1:].strip().startswith("invariant"):
                 safe = True
                 indent = len(d[1:]) - len(d[1:].lstrip())
-                next_indent = len(diff[i+1][1:]) - len(diff[i+1][1:].lstrip())
+                next_indent = len(diff[i + 1][1:]) - len(diff[i + 1][1:].lstrip())
                 if next_indent <= indent:
                     use_parentheses = True
         else:
@@ -150,12 +187,12 @@ def check_changed_code_v2(origin, changed):
                 safe = False
         if safe:
             safe_lines.append(i)
-    
+
     # assert
     for i, d in enumerate(diff):
         if d[1:].strip().startswith("assert"):
             safe_lines.append(i)
-    
+
     # require/ensure
     safe = False
     use_parentheses = False
@@ -168,10 +205,12 @@ def check_changed_code_v2(origin, changed):
                 safe = False
         # ensures have same indent with requires
         if not safe:
-            if (d[1:].strip().startswith("requires") or d[1:].strip().startswith("ensures")):
+            if d[1:].strip().startswith("requires") or d[1:].strip().startswith(
+                "ensures"
+            ):
                 safe = True
                 indent = len(d[1:]) - len(d[1:].lstrip())
-                next_indent = len(diff[i+1][1:]) - len(diff[i+1][1:].lstrip())
+                next_indent = len(diff[i + 1][1:]) - len(diff[i + 1][1:].lstrip())
                 if next_indent <= indent:
                     use_parentheses = True
         if safe:
@@ -188,7 +227,7 @@ def check_changed_code_v2(origin, changed):
             safe_lines.append(i)
             if (d.startswith("-") or d.startswith("+")) and d[1:].strip() == "}":
                 safe = False
-    
+
     for i, d in enumerate(diff):
         if d.startswith("-") or d.startswith("+"):
             if i not in safe_lines:
@@ -197,7 +236,9 @@ def check_changed_code_v2(origin, changed):
 
 
 def evaluate(code, verus_path, func_name=None):
-    fn = tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="llm4v_eval", suffix=".rs")
+    fn = tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix="llm4v_eval", suffix=".rs"
+    )
     fn.write(code)
     fn.close()
 
@@ -214,10 +255,11 @@ def evaluate(code, verus_path, func_name=None):
         score = re.findall(r"(\d+) verified, (\d+) errors", m.stdout)[0]
     except IndexError as e:
         score = (0, max(1, temp))
-    if score[0] == '0' and score[1] == '0':
+    if score[0] == "0" and score[1] == "0":
         score = (0, temp)
     score = (int(score[0]), max(int(score[1]), temp))
     return score, m
+
 
 def compress_nl_assertion(code):
     lines = code.split("\n")
@@ -226,7 +268,11 @@ def compress_nl_assertion(code):
     new_code = ""
     for line in lines:
         if not inside:
-            if line.strip().startswith("assert") and "by" in line and "nonlinear_arith" in line:
+            if (
+                line.strip().startswith("assert")
+                and "by" in line
+                and "nonlinear_arith" in line
+            ):
                 inside = True
                 tmp_line += line
             else:
@@ -255,7 +301,7 @@ def remove_redundant_loopinv(code):
             if line.strip().startswith("{"):
                 invariants = False
             else:
-                thisinv = re.sub(r'//.*','', line).strip()
+                thisinv = re.sub(r"//.*", "", line).strip()
                 for inv in invariantlist:
                     if thisinv == inv:
                         remove = True
@@ -269,7 +315,8 @@ def remove_redundant_loopinv(code):
             new_code += line + "\n"
     return new_code
 
-def same_code_verus (code1, code2, verus_path):
+
+def same_code_verus(code1, code2, verus_path):
     """
     Check if two code snippets return the same Verus err results
     """
@@ -284,13 +331,14 @@ def remove_unnecessary_assert(code):
     """
     Any assert whose existence does not affect Verus proof result will be removed
     """
-    #TO Be Implemented
+    # TO Be Implemented
     return
 
 
 def load_jsonl(filename):
     with open(filename, "r") as f:
         return [json.loads(line) for line in f]
+
 
 def dump_jsonl(data, filename):
     with open(filename, "w") as f:
@@ -300,56 +348,57 @@ def dump_jsonl(data, filename):
 
 
 def fix_one_type_error(oldline, cstart, cend, newtype):
-    #cstart: the starting index of the problematic expression
-    #cend: the ending index of the problematic expression
+    # cstart: the starting index of the problematic expression
+    # cend: the ending index of the problematic expression
 
     prefix = oldline[:cstart]
-    mid = oldline[cstart:cend+1]
-    suffix = oldline[cend+1:]
+    mid = oldline[cstart : cend + 1]
+    suffix = oldline[cend + 1 :]
 
     oldtype_pos = mid.rfind(" as ")
 
     if oldtype_pos > -1:
-        if " " in mid[oldtype_pos+4:].strip():
-            #there was not a cast type for the whole expression
-            #instead it is something like x as int - 1
+        if " " in mid[oldtype_pos + 4 :].strip():
+            # there was not a cast type for the whole expression
+            # instead it is something like x as int - 1
             oldtype_pos = -1
 
     if oldtype_pos == -1:
-        #the old expression does not have "as oldtype"
+        # the old expression does not have "as oldtype"
         if re.match(r"^\(*\)$", mid.strip()):
-            #already in parentheses
+            # already in parentheses
             newmid = mid + " as " + newtype
         #####some times code is written like j-1 and hence needs ()
-        #elif mid.strip().find(" ") == -1:
-            #mid is one variable, no need for parentheses
+        # elif mid.strip().find(" ") == -1:
+        # mid is one variable, no need for parentheses
         #    newmid = mid + " as " + newtype
         else:
             newmid = "( " + mid + " ) as " + newtype
     else:
-        #replace the old as type
+        # replace the old as type
         newmid = mid[:oldtype_pos] + " as " + newtype
 
-    return prefix+newmid+suffix
+    return prefix + newmid + suffix
 
-#this function uses veval's ErrTrace type, which allows
-#the skip of get_typeerror
+
+# this function uses veval's ErrTrace type, which allows
+# the skip of get_typeerror
 def fix_one_type_error_in_code(code, err_trace, verbose=True):
-    #note that linenum, cstart, cend indices all start from 0
+    # note that linenum, cstart, cend indices all start from 0
     err_label = err_trace.strlabel
     if err_label is None or not "`" in err_label:
         sys.stderr.write("Fatal error: err_trace does not have a label")
         sys.stderr.write(code)
         return code
-    newtype = err_label.split('`')[1]
+    newtype = err_label.split("`")[1]
 
     err_lnum = err_trace.get_lines()[0]
-    linenum = err_lnum-1
+    linenum = err_lnum - 1
 
     line = err_trace.get_text()
     cstart = err_trace.text[0].hl_start - 1
     cend = err_trace.text[0].hl_end - 2
-    err_exp = line[cstart:cend+1]
+    err_exp = line[cstart : cend + 1]
 
     newlines = []
     for i, line in enumerate(code.split("\n")):
@@ -357,45 +406,59 @@ def fix_one_type_error_in_code(code, err_trace, verbose=True):
             newlines.append(line)
         else:
             if not err_exp in line:
-                sys.stderr.write("Fatal error: `" + err_exp + "' does not exist in " + line)
+                sys.stderr.write(
+                    "Fatal error: `" + err_exp + "' does not exist in " + line
+                )
                 exit()
-            if err_exp != line[cstart:cend+1]:
-                sys.stderr.write("Fatal error. Expected expression is `" + err_exp + "'; Get expression `" + line[cstart:cend+1])
+            if err_exp != line[cstart : cend + 1]:
+                sys.stderr.write(
+                    "Fatal error. Expected expression is `"
+                    + err_exp
+                    + "'; Get expression `"
+                    + line[cstart : cend + 1]
+                )
 
             newline = fix_one_type_error(line, cstart, cend, newtype)
 
-            #Sometimes, we may encounter non-fixable type error
-            #for example if one expects ..i or [i] to be int, ..i as int or [i] as int will return the same type error
-            #so, we return "" to warn the caller
-            #otherwise, the caller may hang
+            # Sometimes, we may encounter non-fixable type error
+            # for example if one expects ..i or [i] to be int, ..i as int or [i] as int will return the same type error
+            # so, we return "" to warn the caller
+            # otherwise, the caller may hang
             if line == newline:
                 return ""
 
             if verbose == True:
-                sys.stderr.write("[fix_one_type_error_in_code] changed the type of `" 
-                      + line[cstart:cend+1] + "'"
-                        + "as `" + newline.strip() + "'")
+                sys.stderr.write(
+                    "[fix_one_type_error_in_code] changed the type of `"
+                    + line[cstart : cend + 1]
+                    + "'"
+                    + "as `"
+                    + newline.strip()
+                    + "'"
+                )
             newlines.append(newline)
 
     return "\n".join(newlines) + "\n"
+
 
 def clean_code(code):
     might_code = re.findall(r"```rust(.*)```|```verus(.*)```", code, flags=re.DOTALL)
     if might_code:
         code = might_code[0][0] if might_code[0][0] else might_code[0][1]
-    
+
     lines = []
     for line in code.split("\n"):
         if line.strip() == "```":
             continue
 
-        #this is ad-hoc, but somehow GPT often generates ```use ... on first line
+        # this is ad-hoc, but somehow GPT often generates ```use ... on first line
         if line.startswith("```"):
             line = line[3:]
- 
+
         lines.append(line)
     code = "\n".join(lines)
     return code
+
 
 def insert_loop_isolation(code):
     """Insert #[verifier::loop_isolation(false)]"""
@@ -406,10 +469,12 @@ def insert_loop_isolation(code):
             verus_line = i
             break
     if verus_line == -1:
-        self.logger.error("No verus! found in the code.")
+        print("No verus! found in the code.")
         return code
     insert_line = "\n#[verifier::loop_isolation(false)]"
-    new_code = "\n".join(lines[:verus_line+1] + [insert_line] + lines[verus_line+1:])
+    new_code = "\n".join(
+        lines[: verus_line + 1] + [insert_line] + lines[verus_line + 1 :]
+    )
     return new_code
 
 
@@ -418,13 +483,14 @@ def insert_lemma_func(code, lemma_names, lemma_path):
     for lemma_name in lemma_names:
         name = lemma_name
         if not name.endswith(".rs"):
-            name = name+".rs"
+            name = name + ".rs"
         input_file = os.path.join(lemma_path, name)
         lemma_code = open(input_file).read()
         lemma_func_dict = {lemma_name: lemma_code}
         code = insert_proof_func(code, lemma_func_dict)
     return code
-    
+
+
 def insert_proof_func(code, proof_func_dict):
     """Insert the proof functions into the code."""
     lines = code.splitlines()
@@ -436,5 +502,7 @@ def insert_proof_func(code, proof_func_dict):
     if verus_line == -1:
         return code
     proof_func_code = "\n\n".join(proof_func_dict.values())
-    new_code = "\n".join(lines[:verus_line+1] + [proof_func_code] + lines[verus_line+1:])
+    new_code = "\n".join(
+        lines[: verus_line + 1] + [proof_func_code] + lines[verus_line + 1 :]
+    )
     return new_code
