@@ -1,4 +1,4 @@
-# ![Project logo](assets/logo.png) Verus Proof Synthesis
+# <img src="assets/logo.png" alt="Project logo" width="40" /> Verus Proof Synthesis
 
 <p align="left">
     <a href="https://arxiv.org/abs/2409.13082"><img src="https://img.shields.io/badge/arXiv-2409.13082-b31b1b.svg?style=for-the-badge">
