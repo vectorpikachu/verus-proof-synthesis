@@ -2,9 +2,6 @@
 # Licensed under the MIT license.      #
 
 import os
-import re
-import json
-import time
 from pathlib import Path
 from infer import LLM
 from houdini import houdini
@@ -12,8 +9,11 @@ from refinement import Refinement
 from veval import VEval, EvalScore
 from utils import evaluate, code_change_is_safe, clean_code, get_nonlinear_lines
 
+
 class Generation:
-    def __init__(self, config, logger, phase1_examples=["3", "6", "7"], repair_uniform=False):
+    def __init__(
+        self, config, logger, phase1_examples=["3", "6", "7"], repair_uniform=False
+    ):
         self.config = config
         self.llm = LLM(config, logger)
         self.logger = logger
@@ -28,13 +28,24 @@ class Generation:
         self.phase1_examples = phase1_examples
         self.repair_uniform = repair_uniform
 
-        self.logger.info("Generation initialized with phase1_examples: %s", self.phase1_examples)
-        self.logger.info("Generation initialized with repair_uniform: %s", self.repair_uniform)
+        self.logger.info(
+            "Generation initialized with phase1_examples: %s", self.phase1_examples
+        )
+        self.logger.info(
+            "Generation initialized with repair_uniform: %s", self.repair_uniform
+        )
 
-
-    #This long prompt is used in the alternative design where proof generation is done in one shot
-    #withough further phases of refinement or repair
-    def direct_full_inference(self, code, temp=0, answer_num=1, error="", use_simple=True, use_misc_examples=True):
+    # This long prompt is used in the alternative design where proof generation is done in one shot
+    # without further phases of refinement or repair
+    def direct_full_inference(
+        self,
+        code,
+        temp=0,
+        answer_num=1,
+        error="",
+        use_simple=True,
+        use_misc_examples=True,
+    ):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         complex_instruction = """Your missions are to
@@ -90,15 +101,21 @@ Respond with the Rust code only, do not include any explanation.
 
         examples = []
         if use_misc_examples:
-            for f in sorted(os.listdir(os.path.join(self.config.example_path, "input-temp"))):
+            for f in sorted(
+                os.listdir(os.path.join(self.config.example_path, "input-temp"))
+            ):
                 if f.endswith(".rs") and f.startswith("ex"):
                     input_file = os.path.join(self.config.example_path, "input-temp", f)
-                    output_file = os.path.join(self.config.example_path, "output-temp", f)
+                    output_file = os.path.join(
+                        self.config.example_path, "output-temp", f
+                    )
                     input_content = open(input_file).read()
                     output_content = open(output_file).read()
                     examples.append({"query": input_content, "answer": output_content})
         else:
-            for f in sorted(os.listdir(os.path.join(self.config.example_path, "input"))):
+            for f in sorted(
+                os.listdir(os.path.join(self.config.example_path, "input"))
+            ):
                 if f.endswith(".rs") and f[2] in self.phase1_examples:
                     input_file = os.path.join(self.config.example_path, "input", f)
                     output_file = os.path.join(self.config.example_path, "output", f)
@@ -111,9 +128,18 @@ Respond with the Rust code only, do not include any explanation.
                 f.write(ex["answer"] + "\n\n")
 
         self.logger.info("Direct Full Inference ...")
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=answer_num,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
-    #The default first-step of preliminary loop invariant generation 
+    # The default first-step of preliminary loop invariant generation
     def direct_inference(self, code, temp=0, answer_num=1, error=""):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
@@ -141,9 +167,18 @@ Please follow these steps in adding loop invariants for every loop:
                 output_content = open(output_file).read()
                 examples.append({"query": input_content, "answer": output_content})
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
-    
-    #This is an alternatived design where the generation phase and refinement phase are combined into one prompt
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=answer_num,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
+
+    # This is an alternative design where the generation phase and refinement phase are combined into one prompt
     def direct_inference_with_refinement(self, code, temp=0, answer_num=1, error=""):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
@@ -196,8 +231,16 @@ Do not change P or any other loop invariants in any other way."""
                 output_content = open(output_file).read()
                 examples.append({"query": input_content, "answer": output_content})
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
-
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=answer_num,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
     #############################################
     ###The next few are the refinement agents####
@@ -215,19 +258,26 @@ Here are some principles that you have to follow:
 """
         examples = []
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
-
-
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=answer_num,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
     def condlooprefine_inference(self, code, temp=0, answer_num=1, error=""):
         """
         This one checks if any loop invariant should be made to be conditional on loop indx, particularly if the invariant holds for all but the first interation of the loop.
 
         In terms of error fixing:
-        ** If Verus complains that an array-related loop invariant does not hold before the loop, 
-        we can try this refinement. 
+        ** If Verus complains that an array-related loop invariant does not hold before the loop,
+        we can try this refinement.
         """
- 
+
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Your mission is to refine some loop invariants in the given Rust code only if the loop has special handling for the first iteration. This is what you should do: if an existing loop invariant P holds for all iterations of the loop except for the first iteration (e.g., some variable updates may only (not) occur during the first loop iteration), please leave P as it is and add another loop invariant conditioned on the loop index (e.g., index > 0 ==> P), following the example below. 
@@ -235,19 +285,30 @@ Do not change P or any other loop invariants in any other way. """
 
         examples = []
 
-        for f in sorted(os.listdir(os.path.join(self.config.example_path, "input-condinv"))):
+        for f in sorted(
+            os.listdir(os.path.join(self.config.example_path, "input-condinv"))
+        ):
             if f.endswith(".rs"):
                 input_file = os.path.join(self.config.example_path, "input-condinv", f)
-                output_file = os.path.join(self.config.example_path, "output-condinv", f)
+                output_file = os.path.join(
+                    self.config.example_path, "output-condinv", f
+                )
                 input_content = open(input_file).read()
                 output_content = open(output_file).read()
                 examples.append({"query": input_content, "answer": output_content})
 
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
-
-
-    #quantifier refinement
+    # quantifier refinement
     def arrayrefine_inference(self, code, temp=0, answer_num=1, error=""):
         """
         This one checks if an array-related loop invariant has the right range clause:
@@ -255,11 +316,11 @@ Do not change P or any other loop invariants in any other way. """
         otherwise, the range clause should be 0<= .. <i or i<= .. <array.len()
 
         In terms of error fixing:
-        ** If Verus complains that an array-related loop invariant does not hold after the loop, 
-        we can check whether this array is actually not modified and hence should use [0, array.len) clause. 
+        ** If Verus complains that an array-related loop invariant does not hold after the loop,
+        we can check whether this array is actually not modified and hence should use [0, array.len) clause.
         or if this array is actually modified and hence should NOT use [0, array.len) clause.
         """
- 
+
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Please take the following steps to check every loop invariant that involves an array (e.g., x[k]) in the given Rust code:
@@ -272,8 +333,16 @@ You should only make changes to existing loop invariants in the following ways, 
 """
         examples = []
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
-
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
     def constantrefine_inference(self, code, temp=0, answer_num=1, error=""):
         """
@@ -281,9 +350,8 @@ You should only make changes to existing loop invariants in the following ways, 
 
         In terms of error fixing:
         ** If Verus complains about arithmetic overflow,
-        we can run this refinement. 
+        we can run this refinement.
         """
-
 
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
@@ -298,18 +366,26 @@ Here are some principles that you have to follow:
 """
 
         examples = []
-        
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
 
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
     def nonlinear_inference(self, code, temp=0, answer_num=1, error=""):
         """
-        This one checks if any loop invariant is related to a non-linear property. 
+        This one checks if any loop invariant is related to a non-linear property.
 
         In terms of error fixing:
         ** If any invariant is non-linear ...
         """
- 
+
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Your mission is to add assert statements into the given Rust function to help Verus prove non-linear properties.
@@ -336,8 +412,16 @@ Please check the given program, and add nonlinear_arith assertion when Verus nee
 
         examples = []
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
-
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
     def nonlbound_inference(self, code, temp=0, answer_num=1, error=""):
         """
@@ -346,7 +430,7 @@ Please check the given program, and add nonlinear_arith assertion when Verus nee
         In terms of error fixing:
         ** arithmetic overflow
         """
- 
+
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Your mission is to add assertions with `nonlinear_arith' keyword in the given Rust function to help Verus prove there is no arithmetic overflow for any non-linear expressions.
@@ -372,14 +456,23 @@ Please check the given program, and add above nonlinear_arith assertions when ne
 
         examples = []
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
-    #This refinement agent is deprecated as loop-isolation false can largely solve break's problem
+    # This refinement agent is deprecated as loop-isolation false can largely solve break's problem
     def breakloop_inference(self, code, temp=0, answer_num=1, error=""):
         """
-        This one should be applied to loops that have early breaks 
+        This one should be applied to loops that have early breaks
         """
- 
+
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """The break keyword serves as another way to prematurely exit a loop, but it carries a slight complication in terms of loop specifications. Unlike simple while loops whose loop conditions must only be false upon exiting, loops with a break command can exit regardless of whether the loop condition is true or not. Code including break commands are expected to explicitly specify post-loop conditions using ensures clause. Take a look at the example below about how to add `ensures` clause for a loop with break, and then add `ensures' clause for any loop that contains break in the provided code accordingly. If a loop does not have break in it, please do NOT make any changes.
@@ -388,11 +481,19 @@ You should only response with Rust code, and not include any explanation.
 """
         examples = self.refinement.get_examples("loopbreak")
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=1, max_tokens=self.config.max_token, temp=temp)
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=1,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
-
-    ##This repair agent is deprecated (for now).
-    ##LLM is indeed capable of generating proof blocks, but doing it without error-guidance is not effective
+    # WARNING: This repair agent is **deprecated** (for now).
+    # LLM is indeed capable of generating proof blocks, but doing it without error-guidance is not effective
     def proof_block_inference(self, code, temp=0, answer_num=1, error=""):
         system = """You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."""
 
@@ -424,7 +525,9 @@ let ghost ...; // Added by AI
 Here are some principles that you have to follow:
  You should only response with Rust code, and not include any explanation."""
         examples = []
-        for f in sorted(os.listdir(os.path.join(self.config.example_path, "input-proof"))):
+        for f in sorted(
+            os.listdir(os.path.join(self.config.example_path, "input-proof"))
+        ):
             if f.endswith(".rs"):
                 input_file = os.path.join(self.config.example_path, "input-proof", f)
                 output_file = os.path.join(self.config.example_path, "output-proof", f)
@@ -435,11 +538,18 @@ Here are some principles that you have to follow:
             f.write("Query:\n" + examples[0]["query"])
             f.write("\n\nAnswer:\n" + examples[0]["answer"])
 
-        return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
+        return self.llm.infer_llm(
+            self.config.aoai_generation_model,
+            instruction,
+            examples,
+            code,
+            system,
+            answer_num=answer_num,
+            max_tokens=self.config.max_token,
+            temp=temp,
+        )
 
-
-    
-    #an alternative design where the proof is generated in one step (no refinement or repair)
+    # An alternative design where the proof is generated in one step (no refinement or repair)
     def generate_baseline(self, code, retry=25):
         """
         Generate the proof code.
@@ -463,10 +573,21 @@ Here are some principles that you have to follow:
                     best_code_of_all = cand_code
         return best_code_of_all
 
-    
-    def generate_with_proof_func(self, code, with_inference=True, with_refine=True, merge_cand=5, verbose=False, repair_steps=10, temp=1.0, temp_dir=Path("output-intermediate-temp"), disable_ranking=False):
+    def generate_with_proof_func(
+        self,
+        code,
+        with_inference=True,
+        with_refine=True,
+        merge_cand=5,
+        verbose=False,
+        repair_steps=10,
+        temp=1.0,
+        temp_dir=Path("output-intermediate-temp"),
+        disable_ranking=False,
+    ):
         """
-        Generate the proof code with helper proof functions.
+        Generate the proof code with the whole pipeline.
+        This is the default pipeline for proof generation in AutoVerus.
         """
         temp_dir.mkdir(parents=True, exist_ok=True)
         answer_num = merge_cand
@@ -476,7 +597,7 @@ Here are some principles that you have to follow:
             best_score_of_all = EvalScore.get_worst_score()
             best_score_of_valid = EvalScore.get_worst_score()
             code_pool = []
-            best_code_of_all=original_code
+            best_code_of_all = original_code
 
             attempt = 0
             code_pool_stop_size = 4
@@ -487,7 +608,9 @@ Here are some principles that you have to follow:
             while attempt < 3:
                 self.logger.info("Direct inference attempt {}".format(attempt))
                 # Now use direct_inference.
-                codes = self.direct_inference(original_code, temp=temp, answer_num=answer_num)
+                codes = self.direct_inference(
+                    original_code, temp=temp, answer_num=answer_num
+                )
                 found = False
                 has_unsafe = False
                 for i, cand_code in enumerate(codes):
@@ -500,7 +623,9 @@ Here are some principles that you have to follow:
                     veval = VEval(cand_code, self.logger)
                     score = veval.eval_and_get_score()
 
-                    is_safe_code_change = code_change_is_safe(original_code, cand_code, self.config.verus_path, self.logger)
+                    is_safe_code_change = code_change_is_safe(
+                        original_code, cand_code, self.config.verus_path, self.logger
+                    )
 
                     if not is_safe_code_change:
                         has_unsafe = True
@@ -513,24 +638,36 @@ Here are some principles that you have to follow:
                         best_score_of_all = score
                         best_code_of_all = cand_code
 
-                    (temp_dir / f"{attempt}-{i}.rs").write_text(cand_code + "\n// is safe: " + str(is_safe_code_change) + "\n// Score: " + str(score))
+                    (temp_dir / f"{attempt}-{i}.rs").write_text(
+                        cand_code
+                        + "\n// is safe: "
+                        + str(is_safe_code_change)
+                        + "\n// Score: "
+                        + str(score)
+                    )
                     # TODO: We could try to fix the code with compilation error, instead of directly rejecting it
-                    if "verus!" in cand_code and is_safe_code_change and not score.compilation_error:
+                    if (
+                        "verus!" in cand_code
+                        and is_safe_code_change
+                        and not score.compilation_error
+                    ):
                         found = True
                         self.logger.info(f"{attempt}-{i}.rs in code pool")
                         code_pool.append(cand_code)
                         if not (score < best_score_of_valid):
                             best_score_of_valid = score
-                            self.logger.info(f"{attempt}-{i}.rs is now the best proof candidate")
+                            self.logger.info(
+                                f"{attempt}-{i}.rs is now the best proof candidate"
+                            )
                             code = cand_code
                         if len(code_pool) >= code_pool_stop_size:
                             break
-    
+
                 if found and not has_unsafe:
                     break
 
-                #if unsafe code was generated or if no valid code is fine at all, 
-                #better try another invocation to get more candidates
+                # if unsafe code was generated or if no valid code is fine at all,
+                # better try another invocation to get more candidates
                 self.logger.info("Regenerate...")
                 attempt += 1
 
@@ -552,17 +689,21 @@ Here are some principles that you have to follow:
                         self.logger.error(f"Error in merging code at step {i}: {e}")
                         continue
 
-                    #selectively merged 
+                    # selectively merged
                     veval = VEval(merged_code, self.logger)
                     score = veval.eval_and_get_score()
-                    (temp_dir / f"merged-{i}.rs").write_text(merged_code + "\n// Score: " + str(score))
+                    (temp_dir / f"merged-{i}.rs").write_text(
+                        merged_code + "\n// Score: " + str(score)
+                    )
                     if score.is_correct():
                         self.logger.info("Merged code is correct.")
                         return merged_code
 
                     if disable_ranking:
                         if not score.compilation_error:
-                            self.logger.info("Disabled ranking and the code is not correct.")
+                            self.logger.info(
+                                "Disabled ranking and the code is not correct."
+                            )
                             code = merged_code
                     elif not (score < best_score_of_valid):
                         self.logger.info("Merged code is better.")
@@ -577,10 +718,12 @@ Here are some principles that you have to follow:
                         self.logger.info("Merged code with hdn is correct.")
                         return merge_code
 
-                    #allmerged version
+                    # allmerged version
                     am_veval = VEval(allmerged_code, self.logger)
                     am_score = am_veval.eval_and_get_score()
-                    (temp_dir / f"allmerged-{i}.rs").write_text(allmerged_code + "\n// Score: " + str(am_score))
+                    (temp_dir / f"allmerged-{i}.rs").write_text(
+                        allmerged_code + "\n// Score: " + str(am_score)
+                    )
                     if am_score.is_correct():
                         self.logger.info("All merged code is correct.")
                         return allmerged_code
@@ -589,8 +732,8 @@ Here are some principles that you have to follow:
                         self.logger.info("All merged code with hdn is correct.")
                         return hdnam_code
 
-        #the best candidate is `code' now
-        #score is cur_score
+        # the best candidate is `code' now
+        # score is cur_score
         veval = VEval(code, self.logger)
         cur_score = veval.eval_and_get_score()
 
@@ -600,7 +743,7 @@ Here are some principles that you have to follow:
             nl_lines = get_nonlinear_lines(code, self.logger)
             if nl_lines:
                 self.logger.warning("Non-linear arithmetic detected.")
-                for (_, _ , text) in nl_lines:
+                for _, _, text in nl_lines:
                     self.logger.warning(text)
                 refine_funcs.append(self.nonlinear_inference)
                 refine_funcs.append(self.nonlbound_inference)
@@ -620,17 +763,19 @@ Here are some principles that you have to follow:
                         code = newcode
                     if verbose:
                         self.logger.info(code)
-                    if not code_change_is_safe(original_code, code, self.config.verus_path, self.logger):
+                    if not code_change_is_safe(
+                        original_code, code, self.config.verus_path, self.logger
+                    ):
                         self.logger.info("Unsafe code change")
                         code = original_code
                     if "verus!" in code:
                         break
-                    
+
                     self.logger.info("regenerate...")
                     attempt += 1
                 if code == original_code:
                     self.logger.info("Refinement did not change the code")
-                    continue 
+                    continue
 
                 veval = VEval(code, self.logger)
                 new_score = veval.eval_and_get_score()
@@ -638,20 +783,21 @@ Here are some principles that you have to follow:
                     self.logger.info("Verus succeeded with refinement!!")
                     return code
 
-
                 hdn_failures, hdn_code = self.hdn.run(code)
                 if len(hdn_failures) == 0:
                     self.logger.info("Verus succeeded with refinement and Houdini!")
                     return hdn_code
-    
-                #still errors left, let's see if we should accept the new version
+
+                # still errors left, let's see if we should accept the new version
                 if func.__name__ == "condlooprefine_inference":
                     # condloop-refine is not often helpful, so we need to be cautious here
                     self.logger.info("New refined code under condloop is not better")
                     code = original_code
                 elif disable_ranking:
                     if not score.compilation_error:
-                        self.logger.info("Disabled ranking and the code is not correct.")
+                        self.logger.info(
+                            "Disabled ranking and the code is not correct."
+                        )
                         code = original_code
                 elif new_score.is_good_repair(cur_score):
                     # Now we use a loose condition to accept the new code.
@@ -664,15 +810,21 @@ Here are some principles that you have to follow:
                     code = original_code
 
         if repair_steps > 0:
-            (temp_dir / "before-repair.rs").write_text(code + "\n// Score: " + str(cur_score).replace("\n", " "))
+            (temp_dir / "before-repair.rs").write_text(
+                code + "\n// Score: " + str(cur_score).replace("\n", " ")
+            )
             repair_temp_dir = temp_dir / "repair"
             repair_temp_dir.mkdir(parents=True, exist_ok=True)
 
             if self.repair_uniform:
                 # Ablation study: repair with uniform strategy
-                code = self.refinement.repair_veval_in_one(code, max_attempt=repair_steps, temp_dir=repair_temp_dir, temp=temp)
+                code = self.refinement.repair_veval_in_one(
+                    code, max_attempt=repair_steps, temp_dir=repair_temp_dir, temp=temp
+                )
             else:
-                code = self.refinement.repair_veval(code, max_attempt=repair_steps, temp_dir=repair_temp_dir, temp=temp)
+                code = self.refinement.repair_veval(
+                    code, max_attempt=repair_steps, temp_dir=repair_temp_dir, temp=temp
+                )
 
             veval = VEval(code, self.logger)
             score = veval.eval_and_get_score()
@@ -680,13 +832,17 @@ Here are some principles that you have to follow:
                 self.logger.info("Verus succeeded after repair!!")
                 return code
 
-        (temp_dir / "final.rs").write_text(code + "\n// Score: " + str(score).replace("\n", " "))
+        (temp_dir / "final.rs").write_text(
+            code + "\n// Score: " + str(score).replace("\n", " ")
+        )
 
         # run houdini
         hdn_code = self.hdn.run(code)[1]
         hdn_veval = VEval(hdn_code, self.logger)
         hdn_score = hdn_veval.eval_and_get_score()
-        (temp_dir / "final-hdn.rs").write_text(hdn_code + "\n// Score: " + str(hdn_score).replace("\n", " "))
+        (temp_dir / "final-hdn.rs").write_text(
+            hdn_code + "\n// Score: " + str(hdn_score).replace("\n", " ")
+        )
         if hdn_score.is_correct():
             self.logger.info("Verus succeeded with hdn!!")
             return hdn_code
@@ -696,8 +852,7 @@ Here are some principles that you have to follow:
             self.logger.info("Original code is better")
         return code
 
-
-    def run(self, input_file, output_file, args: dict={}):
+    def run(self, input_file, output_file, args: dict = {}):
         baseline = args.get("is_baseline", False)
         repair_steps = args.get("repair", 5)
         merge_cand = args.get("merge", 5)
@@ -707,9 +862,17 @@ Here are some principles that you have to follow:
         direct_repair = args.get("direct_repair", False)
         disable_one_refinement = args.get("disable_one_refinement", -1)
 
-        if disable_one_refinement >= 0 and disable_one_refinement < len(self.default_refine_funcs):
-            self.logger.warning("Disable one refinement function: %s" % self.default_refine_funcs[disable_one_refinement].__name__)
-            self.default_refine_funcs = self.default_refine_funcs[:disable_one_refinement] + self.default_refine_funcs[disable_one_refinement+1:]
+        if disable_one_refinement >= 0 and disable_one_refinement < len(
+            self.default_refine_funcs
+        ):
+            self.logger.warning(
+                "Disable one refinement function: %s"
+                % self.default_refine_funcs[disable_one_refinement].__name__
+            )
+            self.default_refine_funcs = (
+                self.default_refine_funcs[:disable_one_refinement]
+                + self.default_refine_funcs[disable_one_refinement + 1 :]
+            )
 
         content = open(input_file).read()
         output_file = Path(output_file)
@@ -718,26 +881,58 @@ Here are some principles that you have to follow:
         temp_dir = Path(output_dir) / ("intermediate-" + output_file.stem)
         temp_dir.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info("Generating proof code" + (" with baseline" if baseline else ""))
+        self.logger.info(
+            "Generating proof code" + (" with baseline" if baseline else "")
+        )
         self.logger.info("Temperature: " + str(temp))
 
-        #Various alternate designs
+        # Various alternate designs
         if baseline:
             self.logger.info("Generate with baseline mode")
             code = self.generate_baseline(content)
         elif phase_uniform:
             self.logger.info("Generate with uniform refinement mode")
             self.direct_inference = self.direct_inference_with_refinement
-            code = self.generate_with_proof_func(content, with_refine=False, merge_cand=merge_cand, verbose=True, repair_steps=repair_steps, temp_dir=temp_dir, temp=temp, disable_ranking=disable_ranking) 
+            code = self.generate_with_proof_func(
+                content,
+                with_refine=False,
+                merge_cand=merge_cand,
+                verbose=True,
+                repair_steps=repair_steps,
+                temp_dir=temp_dir,
+                temp=temp,
+                disable_ranking=disable_ranking,
+            )
         elif direct_repair:
             self.logger.info("Generate with direct repair mode")
-            code = self.generate_with_proof_func(content, with_inference=False, with_refine=False, merge_cand=merge_cand, verbose=True, repair_steps=repair_steps, temp_dir=temp_dir, temp=temp, disable_ranking=disable_ranking)
+            code = self.generate_with_proof_func(
+                content,
+                with_inference=False,
+                with_refine=False,
+                merge_cand=merge_cand,
+                verbose=True,
+                repair_steps=repair_steps,
+                temp_dir=temp_dir,
+                temp=temp,
+                disable_ranking=disable_ranking,
+            )
         else:
-            #default/recommended 
-            code = self.generate_with_proof_func(content, with_refine=True, merge_cand=merge_cand, verbose=True, repair_steps=repair_steps, temp_dir=temp_dir, temp=temp, disable_ranking=disable_ranking)
+            # default/recommended
+            code = self.generate_with_proof_func(
+                content,
+                with_refine=True,
+                merge_cand=merge_cand,
+                verbose=True,
+                repair_steps=repair_steps,
+                temp_dir=temp_dir,
+                temp=temp,
+                disable_ranking=disable_ranking,
+            )
 
         score, _ = evaluate(code, self.config.verus_path)
-        is_safe = code_change_is_safe(content, code, self.config.verus_path, self.logger, debug=False)
+        is_safe = code_change_is_safe(
+            content, code, self.config.verus_path, self.logger, debug=False
+        )
         code += "\n// Score: " + str(score)
         code += "\n// Safe: " + str(is_safe)
 
