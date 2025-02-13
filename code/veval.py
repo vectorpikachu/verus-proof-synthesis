@@ -25,6 +25,9 @@ class VerusErrorType(Enum):
     MismatchedType = 13
     PreCondFailVecLen = 14
     Other = 15
+    UnxProofBlock = 16
+    RustAssert = 17
+    ExecinGhost = 18
 
 
 m2VerusError = {
@@ -41,6 +44,9 @@ m2VerusError = {
     "assertion failed": VerusErrorType.AssertFail,
     "possible arithmetic underflow/overflow": VerusErrorType.ArithmeticFlow,
     "mismatched types": VerusErrorType.MismatchedType,
+    "unexpected proof block": VerusErrorType.UnxProofBlock,
+    "panic is not supported (if you used Rust's `assert!` macro, you may have meant to use Verus's `assert` function)": VerusErrorType.RustAssert,
+    "cannot call function with mode exec": VerusErrorType.ExecinGhost,
 }
 
 VerusError2m = {v: k for k, v in m2VerusError.items()}
