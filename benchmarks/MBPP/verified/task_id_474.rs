@@ -3,18 +3,9 @@ use vstd::prelude::*;
 fn main() {
     // Write a function in Rust  to replace characters in a string.
 
-    assert_eq!(
-        replace_chars(&("polygon".as_bytes()), b'y', b'l'),
-        "pollgon".as_bytes().to_vec()
-    );
-    assert_eq!(
-        replace_chars(&("character".as_bytes()), b'c', b'a'),
-        "aharaater".as_bytes().to_vec()
-    );
-    assert_eq!(
-        replace_chars(&("python".as_bytes()), b'l', b'a'),
-        "python".as_bytes().to_vec()
-    );
+    assert_eq!(replace_chars(b"polygon", b'y', b'l'), b"pollgon");
+    assert_eq!(replace_chars(b"character", b'c', b'a'), b"aharaater");
+    assert_eq!(replace_chars(b"python", b'l', b'a'), b"python");
 }
 
 verus! {
