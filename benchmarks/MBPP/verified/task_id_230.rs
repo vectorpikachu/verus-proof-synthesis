@@ -4,22 +4,22 @@ fn main() {
     // Write a function in Rust that takes in a string and character, replaces blank spaces in the string with the character, and returns the string.
 
     assert_eq!(
-        replace_blanks_with_chars(&("hello people".as_bytes().to_vec()), b'@'),
-        "hello@people".as_bytes().to_vec()
+        replace_blanks_with_chars(b"hello people", b'@'),
+        b"hello@people"
     );
     assert_eq!(
-        replace_blanks_with_chars(&("python program language".as_bytes().to_vec()), b'$'),
-        "python$program$language".as_bytes().to_vec()
+        replace_blanks_with_chars(b"python program language", b'$'),
+        b"python$program$language"
     );
     assert_eq!(
-        replace_blanks_with_chars(&("blank space".as_bytes().to_vec()), b'-'),
-        "blank-space".as_bytes().to_vec()
+        replace_blanks_with_chars(b"blank space", b'-'),
+        b"blank-space"
     );
 }
 
 verus! {
 
-fn replace_blanks_with_chars(str1: &Vec<u8>, ch: u8) -> (result: Vec<u8>)
+fn replace_blanks_with_chars(str1: &[u8], ch: u8) -> (result: Vec<u8>)
     ensures
         str1@.len() == result@.len(),
         forall|i: int|

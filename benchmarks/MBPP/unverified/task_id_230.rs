@@ -4,7 +4,7 @@ fn main() {}
 
 verus! {
 
-fn replace_blanks_with_chars(str1: &Vec<u8>, ch: u8) -> (result: Vec<u8>)
+fn replace_blanks_with_chars(str1: &[u8], ch: u8) -> (result: Vec<u8>)
     ensures
         str1@.len() == result@.len(),
         forall|i: int|
