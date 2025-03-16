@@ -3,9 +3,9 @@ use vstd::prelude::*;
 fn main() {
     // Write a function in Rust to count the upper case characters in a given string.
 
-    assert_eq!(count_uppercase(&("PYthon".as_bytes().to_vec())), 2);
-    assert_eq!(count_uppercase(&("BigData".as_bytes().to_vec())), 2);
-    assert_eq!(count_uppercase(&("program".as_bytes().to_vec())), 0);
+    assert_eq!(count_uppercase(b"PYthon"), 2);
+    assert_eq!(count_uppercase(b"BigData"), 2);
+    assert_eq!(count_uppercase(b"program"), 0);
 }
 
 verus! {
@@ -32,7 +32,7 @@ spec fn count_uppercase_recursively(seq: Seq<u8>) -> int
     }
 }
 
-fn count_uppercase(text: &Vec<u8>) -> (count: u64)
+fn count_uppercase(text: &[u8]) -> (count: u64)
     ensures
         0 <= count <= text.len(),
         count_uppercase_recursively(text@) == count,

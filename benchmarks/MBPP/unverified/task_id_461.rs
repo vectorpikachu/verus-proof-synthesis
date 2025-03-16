@@ -26,7 +26,7 @@ spec fn count_uppercase_recursively(seq: Seq<u8>) -> int
     }
 }
 
-fn count_uppercase(text: &Vec<u8>) -> (count: u64)
+fn count_uppercase(text: &[u8]) -> (count: u64)
     ensures
         0 <= count <= text.len(),
         count_uppercase_recursively(text@) == count,
