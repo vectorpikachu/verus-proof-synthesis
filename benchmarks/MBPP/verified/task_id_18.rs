@@ -5,30 +5,24 @@ fn main() {
 
     assert_eq!(
         remove_chars(
-            &("probasscurve".chars().collect()),
-            &("pros".chars().collect())
-        )
-        .iter()
-        .collect::<String>(),
-        "bacuve"
+            &("probasscurve".as_bytes().to_vec()),
+            &("pros".as_bytes().to_vec())
+        ),
+        "bacuve".as_bytes().to_vec()
     );
     assert_eq!(
         remove_chars(
-            &("digitalindia".chars().collect()),
-            &("talent".chars().collect())
-        )
-        .iter()
-        .collect::<String>(),
-        "digiidi"
+            &("digitalindia".as_bytes().to_vec()),
+            &("talent".as_bytes().to_vec())
+        ),
+        "digiidi".as_bytes().to_vec()
     );
     assert_eq!(
         remove_chars(
-            &("exoticmiles".chars().collect()),
-            &("toxic".chars().collect())
-        )
-        .iter()
-        .collect::<String>(),
-        "emles"
+            &("exoticmiles".as_bytes().to_vec()),
+            &("toxic".as_bytes().to_vec())
+        ),
+        "emles".as_bytes().to_vec()
     );
 }
 
@@ -43,7 +37,7 @@ proof fn lemma_vec_push<T>(vec: Seq<T>, i: T, l: usize)
 {
 }
 
-fn contains(str: &Vec<char>, key: char) -> (result: bool)
+fn contains(str: &Vec<u8>, key: u8) -> (result: bool)
     ensures
         result <==> (exists|i: int| 0 <= i < str.len() && (str[i] == key)),
 {
@@ -60,7 +54,7 @@ fn contains(str: &Vec<char>, key: char) -> (result: bool)
     false
 }
 
-fn remove_chars(str1: &Vec<char>, str2: &Vec<char>) -> (result: Vec<char>)
+fn remove_chars(str1: &Vec<u8>, str2: &Vec<u8>) -> (result: Vec<u8>)
     ensures
         forall|i: int|
             0 <= i < result.len() ==> (str1@.contains(#[trigger] result[i]) && !str2@.contains(
