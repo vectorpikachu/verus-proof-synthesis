@@ -3,27 +3,9 @@ use vstd::prelude::*;
 fn main() {
     // Write a function in Rust to remove characters from the first string which are present in the second string.
 
-    assert_eq!(
-        remove_chars(
-            &("probasscurve".as_bytes().to_vec()),
-            &("pros".as_bytes().to_vec())
-        ),
-        "bacuve".as_bytes().to_vec()
-    );
-    assert_eq!(
-        remove_chars(
-            &("digitalindia".as_bytes().to_vec()),
-            &("talent".as_bytes().to_vec())
-        ),
-        "digiidi".as_bytes().to_vec()
-    );
-    assert_eq!(
-        remove_chars(
-            &("exoticmiles".as_bytes().to_vec()),
-            &("toxic".as_bytes().to_vec())
-        ),
-        "emles".as_bytes().to_vec()
-    );
+    assert_eq!(remove_chars((b"probasscurve"), (b"pros")), b"bacuve");
+    assert_eq!(remove_chars((b"digitalindia"), (b"talent")), b"digiidi");
+    assert_eq!(remove_chars((b"exoticmiles"), (b"toxic")), b"emles");
 }
 
 verus! {
@@ -37,7 +19,7 @@ proof fn lemma_vec_push<T>(vec: Seq<T>, i: T, l: usize)
 {
 }
 
-fn contains(str: &Vec<u8>, key: u8) -> (result: bool)
+fn contains(str: &[u8], key: u8) -> (result: bool)
     ensures
         result <==> (exists|i: int| 0 <= i < str.len() && (str[i] == key)),
 {
@@ -54,7 +36,7 @@ fn contains(str: &Vec<u8>, key: u8) -> (result: bool)
     false
 }
 
-fn remove_chars(str1: &Vec<u8>, str2: &Vec<u8>) -> (result: Vec<u8>)
+fn remove_chars(str1: &[u8], str2: &[u8]) -> (result: Vec<u8>)
     ensures
         forall|i: int|
             0 <= i < result.len() ==> (str1@.contains(#[trigger] result[i]) && !str2@.contains(
