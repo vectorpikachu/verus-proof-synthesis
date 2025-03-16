@@ -15,7 +15,7 @@ fn is_digit(c: u8) -> (res: bool)
     c >= 48 && c <= 57
 }
 
-fn is_integer(text: &Vec<u8>) -> (result: bool)
+fn is_integer(text: &[u8]) -> (result: bool)
     ensures
         result == (forall|i: int| 0 <= i < text.len() ==> (#[trigger] is_digit_spec(text[i]))),
 {
