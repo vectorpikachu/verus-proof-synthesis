@@ -4,28 +4,22 @@ fn main() {
     // Write a function in Rust  to replace characters in a string.
 
     assert_eq!(
-        replace_chars(&("polygon".chars().collect()), 'y', 'l')
-            .iter()
-            .collect::<String>(),
-        "pollgon"
+        replace_chars(&("polygon".as_bytes()), b'y', b'l'),
+        "pollgon".as_bytes().to_vec()
     );
     assert_eq!(
-        replace_chars(&("character".chars().collect()), 'c', 'a')
-            .iter()
-            .collect::<String>(),
-        "aharaater"
+        replace_chars(&("character".as_bytes()), b'c', b'a'),
+        "aharaater".as_bytes().to_vec()
     );
     assert_eq!(
-        replace_chars(&("python".chars().collect()), 'l', 'a')
-            .iter()
-            .collect::<String>(),
-        "python"
+        replace_chars(&("python".as_bytes()), b'l', b'a'),
+        "python".as_bytes().to_vec()
     );
 }
 
 verus! {
 
-fn replace_chars(str1: &Vec<char>, old_char: char, new_char: char) -> (result: Vec<char>)
+fn replace_chars(str1: &[u8], old_char: u8, new_char: u8) -> (result: Vec<u8>)
     ensures
         str1@.len() == result@.len(),
         forall|i: int|
