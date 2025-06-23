@@ -23,7 +23,17 @@ pub open spec fn valid_layout(size: usize, align: usize) -> bool {
     is_power_2(align as int) && size <= isize::MAX as int - (isize::MAX as int % align as int)
 }
 
-#[cfg_attr(not(verus_verify_core), deprecated = "is_sized is now defunct; lemmas that require V to be sized should now use the trait bound `V: Sized` instead of is_sized<V>")]
+// Keep in mind that the `V: Sized` trait bound is COMPLETELY ignored in the
+// VIR encoding. It is not possible to write an axiom like
+// "If `V: Sized`, then `size_of::<&V>() == size_of::<usize>()`.
+// If you tried, it wouldn't work the way you expect.
+// The ONLY thing that checks Sized marker bounds is rustc, but it is possible
+// to get around rustc's checks with broadcast_forall.
+// Therefore, in spec-land, we must use the `is_sized` predicate instead.
+//
+// Note: for exec functions, and for proof functions that take tracked arguments,
+// we CAN rely on rustc's checking. So in those cases it's okay for us to assume
+// a `V: Sized` type is sized.
 pub uninterp spec fn is_sized<V: ?Sized>() -> bool;
 
 pub uninterp spec fn size_of<V>() -> nat;
@@ -62,6 +72,7 @@ pub open spec fn align_of_as_usize<V>() -> usize
 #[verifier::when_used_as_spec(size_of_as_usize)]
 pub assume_specification<V>[ core::mem::size_of::<V> ]() -> (u: usize)
     ensures
+        is_sized::<V>(),
         u as nat == size_of::<V>(),
     opens_invariants none
     no_unwind
@@ -70,6 +81,7 @@ pub assume_specification<V>[ core::mem::size_of::<V> ]() -> (u: usize)
 #[verifier::when_used_as_spec(align_of_as_usize)]
 pub assume_specification<V>[ core::mem::align_of::<V> ]() -> (u: usize)
     ensures
+        is_sized::<V>(),
         u as nat == align_of::<V>(),
     opens_invariants none
     no_unwind
@@ -82,6 +94,7 @@ pub assume_specification<V>[ core::mem::align_of::<V> ]() -> (u: usize)
 pub exec fn layout_for_type_is_valid<V>()
     ensures
         valid_layout(size_of::<V>() as usize, align_of::<V>() as usize),
+        is_sized::<V>(),
         size_of::<V>() as usize as nat == size_of::<V>(),
         align_of::<V>() as usize as nat == align_of::<V>(),
     opens_invariants none
@@ -93,7 +106,8 @@ pub exec fn layout_for_type_is_valid<V>()
 ///
 /// Note that alignment may be platform specific; if you need to use alignment, use
 /// [Verus's global directive](https://verus-lang.github.io/verus/guide/reference-global.html).
-pub broadcast axiom fn layout_of_primitives()
+#[verifier::external_body]
+pub broadcast proof fn layout_of_primitives()
     ensures
         #![trigger size_of::<bool>()]
         #![trigger size_of::<char>()]
@@ -116,10 +130,12 @@ pub broadcast axiom fn layout_of_primitives()
         size_of::<u128>() == size_of::<i128>() == 16,
         size_of::<usize>() == size_of::<isize>(),
         size_of::<usize>() * 8 == usize::BITS,
-;
+{
+}
 
 /// Size and alignment of the unit tuple ([Reference](https://doc.rust-lang.org/reference/type-layout.html#r-layout.tuple.unit)).
-pub broadcast axiom fn layout_of_unit_tuple()
+#[verifier::external_body]
+pub broadcast proof fn layout_of_unit_tuple()
     ensures
         #![trigger size_of::<()>()]
         #![trigger align_of::<()>()]
@@ -128,7 +144,8 @@ pub broadcast axiom fn layout_of_unit_tuple()
 ;
 
 /// Pointers and references have the same layout. Mutability of the pointer or reference does not change the layout. ([Reference](https://doc.rust-lang.org/reference/type-layout.html#r-layout.pointer.intro).)
-pub broadcast axiom fn layout_of_references_and_pointers<T: ?Sized>()
+#[verifier::external_body]
+pub broadcast proof fn layout_of_references_and_pointers<T: ?Sized>()
     ensures
         #![trigger size_of::<*mut T>()]
         #![trigger size_of::<*const T>()]
@@ -142,7 +159,10 @@ pub broadcast axiom fn layout_of_references_and_pointers<T: ?Sized>()
 
 /// Pointers to sized types have the same size and alignment as usize
 /// ([Reference](https://doc.rust-lang.org/reference/type-layout.html#r-layout.pointer.intro)).
-pub broadcast axiom fn layout_of_references_and_pointers_for_sized_types<T: Sized>()
+#[verifier::external_body]
+pub broadcast proof fn layout_of_references_and_pointers_for_sized_types<T: Sized>()
+    requires
+        is_sized::<T>(),
     ensures
         #![trigger size_of::<*mut T>()]
         #![trigger align_of::<*mut T>()]

@@ -1,6 +1,6 @@
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote_spanned};
+use quote::{quote_spanned, ToTokens};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub static IS_VSTD: AtomicBool = AtomicBool::new(false);

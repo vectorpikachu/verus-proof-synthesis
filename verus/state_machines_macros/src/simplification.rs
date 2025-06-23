@@ -1,7 +1,7 @@
 use crate::ast::Field;
 use crate::ast::{
-    AssertProof, MonoidElt, MonoidStmtType, PostConditionReason, PostConditionReasonField, SM,
-    ShardableType, SimplStmt, SpecialOp, SplitKind, SubIdx, TransitionKind, TransitionStmt,
+    AssertProof, MonoidElt, MonoidStmtType, PostConditionReason, PostConditionReasonField,
+    ShardableType, SimplStmt, SpecialOp, SplitKind, SubIdx, TransitionKind, TransitionStmt, SM,
 };
 use crate::check_bind_stmts::uses_bind;
 use crate::concurrency_tokens::assign_pat_or_arbitrary;
@@ -495,7 +495,7 @@ fn get_initializer_expr(f: &Ident, op: &SpecialOp) -> Expr {
     let cur = get_cur(f);
     match &op.elt {
         MonoidElt::OptionSome(None) => Expr::Verbatim(quote! {
-            #cur.arrow_0()
+            #cur.get_Some_0()
         }),
         MonoidElt::SingletonKV(key, None) => Expr::Verbatim(quote! {
             #cur.index(#key)
@@ -547,8 +547,8 @@ fn expr_can_add(stype: &ShardableType, cur: &Expr, elt: &MonoidElt) -> Option<Ex
             })),
             MonoidElt::OptionSome(e) => Some(Expr::Verbatim(quote_vstd! { vstd =>
                 #vstd::prelude::imply(
-                    (#cur) is Some,
-                    #vstd::prelude::equal((#cur).arrow_0(), #e),
+                    (#cur).is_Some(),
+                    #vstd::prelude::equal((#cur).get_Some_0(), #e),
                 )
             })),
             MonoidElt::SingletonMultiset(_) => None,
@@ -574,7 +574,7 @@ fn expr_can_add(stype: &ShardableType, cur: &Expr, elt: &MonoidElt) -> Option<Ex
         }
     } else {
         match elt {
-            MonoidElt::OptionSome(_e) => Some(Expr::Verbatim(quote! { (#cur) is None })),
+            MonoidElt::OptionSome(_e) => Some(Expr::Verbatim(quote! { (#cur).is_None() })),
             MonoidElt::SingletonKV(key, _val) => {
                 Some(Expr::Verbatim(quote! { !(#cur).dom().contains(#key) }))
             }
@@ -586,7 +586,7 @@ fn expr_can_add(stype: &ShardableType, cur: &Expr, elt: &MonoidElt) -> Option<Ex
                     let ty = get_opt_type(stype);
                     Some(Expr::Verbatim(quote_vstd! { vstd =>
                         #vstd::state_machine_internal::opt_is_none::<#ty>(#e)
-                          || (#cur) is None
+                          || (#cur).is_None()
                     }))
                 }
 
@@ -739,10 +739,10 @@ fn expr_ge(stype: &ShardableType, cur: &Expr, elt: &MonoidElt, pat_opt: &Option<
         MonoidElt::OptionSome(None) => {
             let pat = pat_opt.as_ref().unwrap();
             if !is_definitely_irrefutable(pat) {
-                let e = expr_matches(&Expr::Verbatim(quote! { (#cur).arrow_0() }), pat);
-                Expr::Verbatim(quote! { (#cur) is Some && (#e) })
+                let e = expr_matches(&Expr::Verbatim(quote! { (#cur).get_Some_0() }), pat);
+                Expr::Verbatim(quote! { (#cur).is_Some() && (#e) })
             } else {
-                Expr::Verbatim(quote! { (#cur) is Some })
+                Expr::Verbatim(quote! { (#cur).is_Some() })
             }
         }
         MonoidElt::OptionSome(Some(e)) => {

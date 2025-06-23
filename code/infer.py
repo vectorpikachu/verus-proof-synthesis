@@ -71,7 +71,7 @@ class LLM:
         temp=0.7,
         json=False,
         return_msg=False,
-        verbose=False,
+        verbose=True,
     ):
         """
         Args:
@@ -109,6 +109,7 @@ class LLM:
         cur_time = time.time()
         while True:
             try:
+                self.logger.info(f"Model engine: {engine}")
                 answers = self.client[self.client_id].chat.completions.create(
                     model=engine,
                     messages=messages,
@@ -123,6 +124,7 @@ class LLM:
                 )
                 break
             except openai.NotFoundError as e:
+                self.logger.error(f"Model {engine} not found: {e}")
                 self._add_client_id()
                 continue
             except openai.BadRequestError as e:
@@ -137,6 +139,12 @@ class LLM:
                 else:
                     self._add_client_id()
                 continue
+            except Exception as e:
+                self.logger.error(f"Error in LLM inference: {e}")
+                if return_msg:
+                    return [], messages
+                else:
+                    return []
         self.logger.info(f"Infer time: {time.time() - cur_time}s")
         if return_msg:
             return [

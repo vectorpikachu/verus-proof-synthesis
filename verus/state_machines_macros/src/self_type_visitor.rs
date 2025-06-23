@@ -1,5 +1,5 @@
 use crate::ast::{
-    MonoidElt, SM, ShardableType, SpecialOp, SplitKind, SubIdx, Transition, TransitionStmt,
+    MonoidElt, ShardableType, SpecialOp, SplitKind, SubIdx, Transition, TransitionStmt, SM,
 };
 use crate::to_token_stream::get_self_ty_turbofish_path;
 use syn_verus::punctuated::Punctuated;

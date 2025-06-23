@@ -171,10 +171,13 @@ impl IsThread {
 
     /// Guarantees that any two `IsThread` objects on the same thread
     /// will have the same ID.
-    pub axiom fn agrees(tracked self, tracked other: IsThread)
+    #[verifier::external_body]
+    pub proof fn agrees(tracked self, tracked other: IsThread)
         ensures
             self@ == other@,
-    ;
+    {
+        unimplemented!();
+    }
 }
 
 #[verifier::external]
@@ -207,7 +210,10 @@ pub fn thread_id() -> (res: (ThreadId, Tracked<IsThread>))
 }
 
 /// Returns _just_ the ghost object, without physically obtaining the thread ID.
-pub axiom fn ghost_thread_id() -> (tracked res: IsThread);
+#[verifier::external_body]
+pub proof fn ghost_thread_id() -> (tracked res: IsThread) {
+    unimplemented!();
+}
 
 /// Tracked object that makes any tracked object `Send` or `Sync`.
 /// Requires the client to prove that they are the correct thread in order to
@@ -234,40 +240,52 @@ impl<V> ThreadShareable<V> {
     pub uninterp spec fn id(&self) -> ThreadId;
 
     /// Recover the inner value provide we are on the same thread.
-    pub axiom fn into(tracked self, tracked is_thread: IsThread) -> (tracked res: V)
+    #[verifier::external_body]
+    pub proof fn into(tracked self, tracked is_thread: IsThread) -> (tracked res: V)
         requires
             self.id() == is_thread@,
         ensures
             res == self@,
-    ;
+    {
+        unimplemented!();
+    }
 
     /// Borrow the inner value provide we are on the same thread.
-    pub axiom fn borrow(tracked &self, tracked is_thread: IsThread) -> (tracked res: &V)
+    #[verifier::external_body]
+    pub proof fn borrow(tracked &self, tracked is_thread: IsThread) -> (tracked res: &V)
         requires
             self.id() == is_thread@,
         ensures
             *res == self@,
-    ;
+    {
+        unimplemented!();
+    }
 }
 
 impl<V: Send> ThreadShareable<V> {
     /// Recover the inner value.
     /// Unlike `into`, this has no thread requirement, but it does
     /// require the inner type to be `Send`.
-    pub axiom fn send_into(tracked self) -> (tracked res: V)
+    #[verifier::external_body]
+    pub proof fn send_into(tracked self) -> (tracked res: V)
         ensures
             res == self@,
-    ;
+    {
+        unimplemented!();
+    }
 }
 
 impl<V: Sync> ThreadShareable<V> {
     /// Borrow the inner value.
     /// Unlike `borrow`, this has no thread requirement, but it does
     /// require the inner type to be `Sync`.
-    pub axiom fn sync_borrow(tracked &self) -> (tracked res: &V)
+    #[verifier::external_body]
+    pub proof fn sync_borrow(tracked &self) -> (tracked res: &V)
         ensures
             *res == self@,
-    ;
+    {
+        unimplemented!();
+    }
 }
 
 } // verus!

@@ -1,1 +1,6 @@
 __pycache__
+intermediate-[a-zA-Z0-9]*/
+default-query.txt
+example-default.txt
+uv.lock
+.venv

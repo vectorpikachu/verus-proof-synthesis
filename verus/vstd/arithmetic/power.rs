@@ -38,8 +38,7 @@ use super::internals::mul_internals::{group_mul_properties_internal, lemma_mul_i
 use super::super::math::{sub as sub1};
 
 /// This function performs exponentiation recursively, to compute `b`
-/// to the power of a natural number `e`.
-#[verifier::opaque]
+/// to the power of a natural number `e`
 pub open spec fn pow(b: int, e: nat) -> int
     decreases e,
 {
@@ -50,7 +49,7 @@ pub open spec fn pow(b: int, e: nat) -> int
     }
 }
 
-/// Proof that the given integer `b` to the power of 0 is 1.
+/// Proof that the given integer `b` to the power of 0 is 1
 pub broadcast proof fn lemma_pow0(b: int)
     ensures
         #[trigger] pow(b, 0) == 1,
@@ -58,7 +57,19 @@ pub broadcast proof fn lemma_pow0(b: int)
     reveal(pow);
 }
 
-/// Proof that the given integer `b` to the power of 1 is `b`.
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_basics_auto()
+    ensures
+        forall|x: int| #[trigger] (0 * x) == 0,
+        forall|x: int| #[trigger] (x * 0) == 0,
+        forall|x: int| #[trigger] (x * 1) == x,
+        forall|x: int| #[trigger] (1 * x) == x,
+{
+    broadcast use group_mul_basics;
+
+}
+
+/// Proof that the given integer `b` to the power of 1 is `b`
 pub broadcast proof fn lemma_pow1(b: int)
     ensures
         #[trigger] pow(b, 1) == b,
@@ -72,14 +83,13 @@ pub broadcast proof fn lemma_pow1(b: int)
             lemma_pow0(b);
         }
         b * 1; {
-            broadcast use group_mul_basics;
-
+            lemma_mul_basics_auto();
         }
         b;
     }
 }
 
-/// Proof that 0 to the power of the given positive integer `e` is 0.
+/// Proof that 0 to the power of the given positive integer `e` is 0
 pub broadcast proof fn lemma0_pow(e: nat)
     requires
         e > 0,
@@ -88,28 +98,26 @@ pub broadcast proof fn lemma0_pow(e: nat)
     decreases e,
 {
     reveal(pow);
-    broadcast use group_mul_basics;
-
+    lemma_mul_basics_auto();
     if e != 1 {
         lemma0_pow((e - 1) as nat);
     }
 }
 
-/// Proof that 1 to the power of the given natural number `e` is 1.
+/// Proof that 1 to the power of the given natural number `e` is 1
 pub broadcast proof fn lemma1_pow(e: nat)
     ensures
         #[trigger] pow(1, e) == 1,
     decreases e,
 {
     reveal(pow);
-    broadcast use group_mul_basics;
-
+    lemma_mul_basics_auto();
     if e != 0 {
         lemma1_pow((e - 1) as nat);
     }
 }
 
-/// Proof that taking the given number `x` to the power of 2 produces `x * x`.
+/// Proof that taking the given number `x` to the power of 2 produces `x * x`
 pub broadcast proof fn lemma_square_is_pow2(x: int)
     ensures
         #[trigger] pow(x, 2) == x * x,
@@ -118,7 +126,7 @@ pub broadcast proof fn lemma_square_is_pow2(x: int)
 }
 
 /// Proof that taking the given positive integer `b` to the power of
-/// the given natural number `n` produces a positive result.
+/// the given natural number `n` produces a positive result
 pub broadcast proof fn lemma_pow_positive(b: int, e: nat)
     requires
         b > 0,
@@ -127,14 +135,27 @@ pub broadcast proof fn lemma_pow_positive(b: int, e: nat)
 {
     // dafny does not need to reveal
     reveal(pow);
-    broadcast use {lemma_mul_increases, lemma_pow0};
+    broadcast use lemma_mul_increases;
+    broadcast use lemma_pow0;
 
     lemma_mul_induction_auto(e as int, |u: int| 0 <= u ==> 0 < pow(b, u as nat));
 }
 
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_associative_auto()
+    ensures
+        forall|x: int, y: int, z: int|
+            #![trigger x * (y * z)]
+            #![trigger (x * y) * z]
+            x * (y * z) == (x * y) * z,
+{
+    broadcast use lemma_mul_is_associative;
+
+}
+
 /// Proof that taking an integer `b` to the power of the sum of two
 /// natural numbers `e1` and `e2` is equivalent to multiplying `b` to
-/// the power of `e1` by `b` to the power of `e2`.
+/// the power of `e1` by `b` to the power of `e2`
 pub broadcast proof fn lemma_pow_adds(b: int, e1: nat, e2: nat)
     ensures
         #[trigger] pow(b, e1 + e2) == pow(b, e1) * pow(b, e2),
@@ -147,8 +168,7 @@ pub broadcast proof fn lemma_pow_adds(b: int, e1: nat, e2: nat)
                 lemma_pow0(b);
             }
             1 * pow(b, e2); {
-                broadcast use group_mul_basics;
-
+                lemma_mul_basics_auto();
             }
             pow(b, 0 + e2);
         }
@@ -159,8 +179,7 @@ pub broadcast proof fn lemma_pow_adds(b: int, e1: nat, e2: nat)
                 reveal(pow);
             }
             (b * pow(b, (e1 - 1) as nat)) * pow(b, e2); {
-                broadcast use lemma_mul_is_associative;
-
+                lemma_mul_is_associative_auto();
             }
             b * (pow(b, (e1 - 1) as nat) * pow(b, e2)); {
                 lemma_pow_adds(b, (e1 - 1) as nat, e2);
@@ -175,7 +194,7 @@ pub broadcast proof fn lemma_pow_adds(b: int, e1: nat, e2: nat)
 
 /// Proof that if `e1 >= e2`, then `b` to the power of `e1` is equal
 /// to the product of `b` to the power of `e1 - e2` and `b` to the
-/// power of `e2`.
+/// power of `e2`
 pub broadcast proof fn lemma_pow_sub_add_cancel(b: int, e1: nat, e2: nat)
     requires
         e1 >= e2,
@@ -211,9 +230,21 @@ pub broadcast proof fn lemma_pow_subtracts(b: int, e1: nat, e2: nat)
     }
 }
 
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_distributive_auto()
+    ensures
+        forall|x: int, y: int, z: int| #[trigger] (x * (y + z)) == x * y + x * z,
+        forall|x: int, y: int, z: int| #[trigger] ((y + z) * x) == y * x + z * x,
+        forall|x: int, y: int, z: int| #[trigger] (x * (y - z)) == x * y - x * z,
+        forall|x: int, y: int, z: int| #[trigger] ((y - z) * x) == y * x - z * x,
+{
+    broadcast use group_mul_is_distributive;
+
+}
+
 /// Proof that `a` to the power of `b * c` is equal to the result of
 /// taking `a` to the power of `b`, then taking that to the power of
-/// `c`.
+/// `c`
 pub broadcast proof fn lemma_pow_multiplies(a: int, b: nat, c: nat)
     ensures
         0 <= b * c,
@@ -222,8 +253,7 @@ pub broadcast proof fn lemma_pow_multiplies(a: int, b: nat, c: nat)
 {
     lemma_mul_nonnegative(b as int, c as int);
     if c == 0 {
-        broadcast use group_mul_basics;
-
+        lemma_mul_basics_auto();
         calc! {
             (==)
             pow(a, (b * c) as nat); {
@@ -238,13 +268,9 @@ pub broadcast proof fn lemma_pow_multiplies(a: int, b: nat, c: nat)
         calc! {
             (==)
             b * c - b; {
-                broadcast use group_mul_basics;
-
+                lemma_mul_basics_auto();
             }
-            b * c - b * 1; {
-                broadcast use group_mul_is_distributive;
-
-            }
+            b * c - b * 1; { lemma_mul_is_distributive_auto() }
             b * (c - 1);
         }
         lemma_mul_nonnegative(b as int, c - 1);
@@ -267,16 +293,24 @@ pub broadcast proof fn lemma_pow_multiplies(a: int, b: nat, c: nat)
     }
 }
 
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_commutative_auto()
+    ensures
+        forall|x: int, y: int| #[trigger] (x * y) == y * x,
+{
+    broadcast use lemma_mul_is_commutative;
+
+}
+
 /// Proof that `a * b` to the power of `e` is equal to the product of
-/// `a` to the power of `e` and `b` to the power of `e`.
+/// `a` to the power of `e` and `b` to the power of `e`
 pub broadcast proof fn lemma_pow_distributes(a: int, b: int, e: nat)
     ensures
         #[trigger] pow(a * b, e) == pow(a, e) * pow(b, e),
     decreases e,
 {
     reveal(pow);
-    broadcast use group_mul_basics;
-
+    lemma_mul_basics_auto();
     if e >= 1 {
         calc! {
             (==)
@@ -287,8 +321,8 @@ pub broadcast proof fn lemma_pow_distributes(a: int, b: int, e: nat)
                 lemma_pow_distributes(a, b, (e - 1) as nat);
             }
             (a * b) * (pow(a, (e - 1) as nat) * pow(b, (e - 1) as nat)); {
-                broadcast use {lemma_mul_is_associative, lemma_mul_is_commutative};
-
+                lemma_mul_is_associative_auto();
+                lemma_mul_is_commutative_auto();
                 assert((a * b * pow(a, (e - 1) as nat)) * pow(b, (e - 1) as nat) == (a * pow(
                     a,
                     (e - 1) as nat,
@@ -432,7 +466,7 @@ pub broadcast proof fn lemma_pow_increases_converse(b: nat, e1: nat, e2: nat)
 }
 
 /// Proof that `(b^(xy))^z = (b^x)^(yz)`, given that `x * y` and `y *
-/// z` are nonnegative and `b` is positive.
+/// z` are nonnegative and `b` is positive
 pub broadcast proof fn lemma_pull_out_pows(b: nat, x: nat, y: nat, z: nat)
     requires
         b > 0,
@@ -457,7 +491,7 @@ pub broadcast proof fn lemma_pull_out_pows(b: nat, x: nat, y: nat, z: nat)
 }
 
 /// Proof that if `e2 <= e1` and `x < pow(b, e1)`, then dividing `x`
-/// by `pow(b, e2)` produces a result less than `pow(b, e1 - e2)`.
+/// by `pow(b, e2)` produces a result less than `pow(b, e1 - e2)`
 pub proof fn lemma_pow_division_inequality(x: nat, b: nat, e1: nat, e2: nat)
     requires
         b > 0,
@@ -479,14 +513,14 @@ pub proof fn lemma_pow_division_inequality(x: nat, b: nat, e1: nat, e2: nat)
                 pow(b as int, e2),
             );
             lemma_fundamental_div_mod(x as int, pow(b as int, e2));
-            broadcast use {lemma_mul_is_commutative, group_mod_properties};
+            broadcast use lemma_mul_is_commutative, group_mod_properties;
 
             lemma_pow_adds(b as int, (e1 - e2) as nat, e2);
         }
     };
 }
 
-/// Proof that `pow(b, e)` modulo `b` is 0.
+/// Proof that `pow(b, e)` modulo `b` is 0
 pub broadcast proof fn lemma_pow_mod(b: nat, e: nat)
     requires
         b > 0,
@@ -512,7 +546,7 @@ pub broadcast proof fn lemma_pow_mod(b: nat, e: nat)
     // (==)
     // pow(b as int, e) % b as int; {}
     // (b * pow(b as int, (e - 1) as nat)) % b as int;
-    // { broadcast use lemma_mul_is_associative; }
+    // { lemma_mul_is_associative_auto(); }
     // (pow(b as int, (e - 1) as nat) * b) % b as int;
     // {
     //     lemma_pow_positive_auto();

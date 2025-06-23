@@ -79,7 +79,7 @@ RwLockToks<K, V, Pred: InvariantPredicate<K, V>> {
 
             remove pending_reader -= {()};
 
-            birds_eye let x: V = pre.storage->0;
+            birds_eye let x: V = pre.storage.get_Some_0();
             add reader += {x};
 
             assert Pred::inv(pre.k, x);
@@ -117,7 +117,7 @@ RwLockToks<K, V, Pred: InvariantPredicate<K, V>> {
 
             add writer += Some(());
 
-            birds_eye let x = pre.storage->0;
+            birds_eye let x = pre.storage.get_Some_0();
             withdraw storage -= Some(x);
 
             assert Pred::inv(pre.k, x);
@@ -162,7 +162,7 @@ RwLockToks<K, V, Pred: InvariantPredicate<K, V>> {
             assert(pre.flag_rc >= 1) by {
                 //assert(pre.reader.count(x) >= 1);
                 assert(equal(pre.storage, Option::Some(x)));
-                //assert(equal(x, pre.storage->0));
+                //assert(equal(x, pre.storage.get_Some_0()));
             };
             update flag_rc = (pre.flag_rc - 1) as nat;
         }
@@ -171,14 +171,14 @@ RwLockToks<K, V, Pred: InvariantPredicate<K, V>> {
     #[invariant]
     pub fn exc_bit_matches(&self) -> bool {
         (if self.flag_exc { 1 } else { 0 as int }) ==
-            (if self.pending_writer is Some { 1 } else { 0 as int }) as int
-            + (if self.writer is Some { 1 } else { 0 as int }) as int
+            (if self.pending_writer.is_Some() { 1 } else { 0 as int }) as int
+            + (if self.writer.is_Some() { 1 } else { 0 as int }) as int
     }
 
     #[invariant]
     pub fn count_matches(&self) -> bool {
         self.flag_rc == self.pending_reader.count(())
-            + self.reader.count(self.storage->0)
+            + self.reader.count(self.storage.get_Some_0())
     }
 
     #[invariant]
@@ -189,12 +189,12 @@ RwLockToks<K, V, Pred: InvariantPredicate<K, V>> {
 
     #[invariant]
     pub fn writer_agrees_storage(&self) -> bool {
-        imply(self.writer is Some, self.storage is None)
+        imply(self.writer.is_Some(), self.storage.is_None())
     }
 
     #[invariant]
     pub fn writer_agrees_storage_rev(&self) -> bool {
-        imply(self.storage is None, self.writer is Some)
+        imply(self.storage.is_None(), self.writer.is_Some())
     }
 
     #[invariant]
@@ -337,7 +337,7 @@ struct_with_invariants_vstd!{
     pub struct RwLock<V, Pred: RwLockPredicate<V>> {
         cell: PCell<V>,
         exc: AtomicBool<_, RwLockToks::flag_exc<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>, _>,
-        rc: AtomicUsize<_, RwLockToks::flag_rc<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>, _>,
+        rc: AtomicU64<_, RwLockToks::flag_rc<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>, _>,
 
         inst: Tracked<RwLockToks::Instance<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>>,
         pred: Ghost<Pred>,
@@ -350,7 +350,7 @@ struct_with_invariants_vstd!{
                 && g.value() == v
         }
 
-        invariant on rc with (inst) is (v: usize, g: RwLockToks::flag_rc<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>) {
+        invariant on rc with (inst) is (v: u64, g: RwLockToks::flag_rc<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>) {
             g.instance_id() == inst@.id()
                 && g.value() == v
         }
@@ -515,7 +515,7 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
         let inst = Tracked(inst);
 
         let exc = AtomicBool::new(Ghost(inst), false, Tracked(flag_exc));
-        let rc = AtomicUsize::new(Ghost(inst), 0, Tracked(flag_rc));
+        let rc = AtomicU64::new(Ghost(inst), 0, Tracked(flag_rc));
 
         RwLock { cell, exc, rc, inst, pred: Ghost(pred) }
     }
@@ -525,7 +525,6 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
     /// **Warning:** The lock is _NOT_ released automatically when the handle
     /// is dropped. You must call [`WriteHandle::release_write`].
     /// Verus does not check that lock is released.
-    #[verifier::exec_allows_no_decreases_clause]
     pub fn acquire_write(&self) -> (ret: (V, WriteHandle<V, Pred>))
         ensures
             ({
@@ -544,7 +543,10 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
         > = Option::None;
         while !done
             invariant
-                done ==> token.is_some() && equal(token->0.instance_id(), self.inst@.id()),
+                done ==> token.is_some() && equal(
+                    token.get_Some_0().instance_id(),
+                    self.inst@.id(),
+                ),
                 self.wf(),
         {
             let result =
@@ -553,7 +555,7 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
                 returning res;
                 ghost g =>
             {
-                if res is Ok {
+                if res.is_Ok() {
                     token = Option::Some(self.inst.borrow().acquire_exc_start(&mut g));
                 }
             });
@@ -566,7 +568,7 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
         }
         loop
             invariant
-                token is Some && equal(token->0.instance_id(), self.inst@.id()),
+                token.is_Some() && equal(token.get_Some_0().instance_id(), self.inst@.id()),
                 self.wf(),
         {
             let tracked mut perm_opt: Option<PointsTo<V>> = None;
@@ -615,7 +617,6 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
     /// **Warning:** The lock is _NOT_ released automatically when the handle
     /// is dropped. You must call [`ReadHandle::release_read`].
     /// Verus does not check that lock is released.
-    #[verifier::exec_allows_no_decreases_clause]
     pub fn acquire_read(&self) -> (read_handle: ReadHandle<V, Pred>)
         ensures
             read_handle.rwlock() == *self,
@@ -634,14 +635,14 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
                 RwLockToks::pending_reader<(Pred, CellId), PointsTo<V>, InternalPred<V, Pred>>,
             > = Option::None;
 
-            if val < usize::MAX {
+            if val < 0xffff_ffff_ffff_ffff {
                 let result =
                     atomic_with_ghost!(
                     &self.rc => compare_exchange(val, val + 1);
                     returning res;
                     ghost g =>
                 {
-                    if res is Ok {
+                    if res.is_Ok() {
                         token = Option::Some(self.inst.borrow().acquire_read_start(&mut g));
                     }
                 });
@@ -693,7 +694,6 @@ impl<V, Pred: RwLockPredicate<V>> RwLock<V, Pred> {
 
     /// Destroys the lock and returns the inner object.
     /// Note that this may deadlock if not all locks have been released.
-    #[verifier::exec_allows_no_decreases_clause]
     pub fn into_inner(self) -> (v: V)
         ensures
             self.inv(v),

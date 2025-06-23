@@ -70,14 +70,6 @@ impl<Key> HashSetWithView<Key> where Key: View + Eq + Hash {
     }
 
     #[verifier::external_body]
-    pub fn is_empty(&self) -> (result: bool)
-        ensures
-            result == self@.is_empty(),
-    {
-        self.m.is_empty()
-    }
-
-    #[verifier::external_body]
     pub fn insert(&mut self, k: Key) -> (result: bool)
         ensures
             self@ == old(self)@.insert(k@) && result == !old(self)@.contains(k@),
@@ -121,12 +113,14 @@ impl<Key> HashSetWithView<Key> where Key: View + Eq + Hash {
     }
 }
 
-pub broadcast axiom fn axiom_hash_set_with_view_spec_len<Key>(m: &HashSetWithView<Key>) where
+pub broadcast proof fn axiom_hash_set_with_view_spec_len<Key>(m: &HashSetWithView<Key>) where
     Key: View + Eq + Hash,
 
     ensures
         #[trigger] m.spec_len() == m@.len(),
-;
+{
+    admit();
+}
 
 #[verifier::ext_equal]
 pub struct StringHashSet {
@@ -162,14 +156,6 @@ impl StringHashSet {
             self@ == old(self)@,
     {
         self.m.reserve(additional);
-    }
-
-    #[verifier::external_body]
-    pub fn is_empty(&self) -> (result: bool)
-        ensures
-            result == self@.is_empty(),
-    {
-        self.m.is_empty()
     }
 
     pub uninterp spec fn spec_len(&self) -> usize;
@@ -227,10 +213,12 @@ impl StringHashSet {
     }
 }
 
-pub broadcast axiom fn axiom_string_hash_set_spec_len(m: &StringHashSet)
+pub broadcast proof fn axiom_string_hash_set_spec_len(m: &StringHashSet)
     ensures
         #[trigger] m.spec_len() == m@.len(),
-;
+{
+    admit();
+}
 
 pub broadcast group group_hash_set_axioms {
     axiom_hash_set_with_view_spec_len,

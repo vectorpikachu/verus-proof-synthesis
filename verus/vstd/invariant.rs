@@ -165,10 +165,6 @@ pub struct LocalInvariant<K, V, Pred> {
     dummy1: super::prelude::AlwaysSyncSend<(K, Pred, *mut V)>,
 }
 
-// redundant, just makes the error msg a bit nicer
-#[cfg(verus_keep_ghost)]
-impl<K, V, Pred> !Sync for LocalInvariant<K, V, Pred> {}
-
 macro_rules! declare_invariant_impl {
     ($invariant:ident) => {
         // note the path names of `inv` and `namespace` are harcoded into the VIR crate.
@@ -201,20 +197,28 @@ macro_rules! declare_invariant_impl {
             ///` with constant `k`. initial stored (tracked) value `v`,
             /// and in the namespace `ns`.
 
-            pub axiom fn new(k: K, tracked v: V, ns: int) -> (tracked i: $invariant<K, V, Pred>)
+            #[verifier::external_body]
+            pub proof fn new(k: K, tracked v: V, ns: int) -> (tracked i: $invariant<K, V, Pred>)
                 requires
                     Pred::inv(k, v),
                 ensures
                     i.constant() == k,
-                    i.namespace() == ns;
+                    i.namespace() == ns,
+            {
+                unimplemented!();
+            }
 
             /// Destroys the `
             #[doc = stringify!($invariant)]
             ///`, returning the tracked value contained within.
 
-            pub axiom fn into_inner(#[verifier::proof] self) -> (tracked v: V)
+            #[verifier::external_body]
+            pub proof fn into_inner(#[verifier::proof] self) -> (tracked v: V)
                 ensures self.inv(v),
-                opens_invariants [ self.namespace() ];
+                opens_invariants [ self.namespace() ]
+            {
+                unimplemented!();
+            }
         }
 
         }

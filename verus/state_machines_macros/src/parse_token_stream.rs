@@ -3,7 +3,7 @@
 use crate::ast::INIT_LABEL_TYPE_NAME;
 use crate::ast::TRANSITION_LABEL_TYPE_NAME;
 use crate::ast::{
-    Extras, Invariant, Lemma, LemmaPurpose, LemmaPurposeKind, SM, ShardableType, Transition,
+    Extras, Invariant, Lemma, LemmaPurpose, LemmaPurposeKind, ShardableType, Transition, SM,
 };
 use crate::ident_visitor::validate_ident;
 use crate::parse_transition::parse_transition;
@@ -11,15 +11,15 @@ use crate::self_type_visitor::replace_self_sm;
 use crate::to_token_stream::shardable_type_to_type;
 use crate::transitions::check_transitions;
 use proc_macro2::Span;
-use syn_verus::Token;
 use syn_verus::buffer::Cursor;
 use syn_verus::parse;
 use syn_verus::parse::{Parse, ParseStream};
 use syn_verus::spanned::Spanned;
+use syn_verus::Token;
 use syn_verus::{
-    AttrStyle, Attribute, Error, FieldsNamed, FnArg, FnArgKind, FnMode, GenericArgument,
+    braced, AttrStyle, Attribute, Error, FieldsNamed, FnArg, FnArgKind, FnMode, GenericArgument,
     GenericParam, Generics, Ident, ImplItemFn, Item, ItemFn, Meta, MetaList, PathArguments,
-    Receiver, ReturnType, Type, TypeParam, TypePath, Visibility, WhereClause, braced,
+    Receiver, ReturnType, Type, TypeParam, TypePath, Visibility, WhereClause,
 };
 
 pub struct SMBundle {
@@ -300,9 +300,6 @@ fn to_invariant(impl_item_method: ImplItemFn) -> parse::Result<Invariant> {
     match &impl_item_method.sig.mode {
         FnMode::Default | FnMode::Spec(_) | FnMode::SpecChecked(_) => {}
         FnMode::Proof(mode_proof) => {
-            return Err(Error::new(mode_proof.span(), "an invariant function should be `spec`"));
-        }
-        FnMode::ProofAxiom(mode_proof) => {
             return Err(Error::new(mode_proof.span(), "an invariant function should be `spec`"));
         }
         FnMode::Exec(mode_exec) => {

@@ -15,77 +15,92 @@ macro_rules! num_specs {
             pub assume_specification[<$uN as Clone>::clone](x: &$uN) -> (res: $uN)
                 ensures res == x;
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::wrapping_add](x: $uN, y: $uN) -> $uN
-                returns (
-                    if x + y > <$uN>::MAX {
-                        (x + y - $range) as $uN
-                    } else {
-                        (x + y) as $uN
-                    }
-                );
+            pub open spec fn wrapping_add(x: $uN, y: $uN) -> $uN {
+                if x + y > <$uN>::MAX {
+                    (x + y - $range) as $uN
+                } else {
+                    (x + y) as $uN
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::wrapping_add_signed](x: $uN, y: $iN) -> $uN
-                returns (
-                    if x + y > <$uN>::MAX {
-                        (x + y - $range) as $uN
-                    } else if x + y < 0 {
-                        (x + y + $range) as $uN
-                    } else {
-                        (x + y) as $uN
-                    }
-                );
+            #[verifier::when_used_as_spec(wrapping_add)]
+            pub assume_specification[<$uN>::wrapping_add](x: $uN, y: $uN) -> (res: $uN)
+                ensures res == wrapping_add(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::wrapping_sub](x: $uN, y: $uN) -> $uN
-                returns (
-                    if x - y < 0 {
-                        (x - y + $range) as $uN
-                    } else {
-                        (x - y) as $uN
-                    }
-                );
+            pub open spec fn wrapping_add_signed(x: $uN, y: $iN) -> $uN {
+                if x + y > <$uN>::MAX {
+                    (x + y - $range) as $uN
+                } else if x + y < 0 {
+                    (x + y + $range) as $uN
+                } else {
+                    (x + y) as $uN
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::checked_add](x: $uN, y: $uN) -> Option<$uN>
-                returns (
-                    if x + y > <$uN>::MAX {
-                        None
-                    } else {
-                        Some((x + y) as $uN)
-                    }
-                );
+            #[verifier::when_used_as_spec(wrapping_add_signed)]
+            pub assume_specification[<$uN>::wrapping_add_signed](x: $uN, y: $iN) -> (res: $uN)
+                ensures res == wrapping_add_signed(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::checked_add_signed](x: $uN, y: $iN) -> Option<$uN>
-                returns (
-                    if x + y > <$uN>::MAX || x + y < 0 {
-                        None
-                    } else {
-                        Some((x + y) as $uN)
-                    }
-                );
+            pub open spec fn wrapping_sub(x: $uN, y: $uN) -> $uN {
+                if x - y < 0 {
+                    (x - y + $range) as $uN
+                } else {
+                    (x - y) as $uN
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::checked_sub](x: $uN, y: $uN) -> Option<$uN>
-                returns (
-                    if x - y < 0 {
-                        None
-                    } else {
-                        Some((x - y) as $uN)
-                    }
-                );
+            #[verifier::when_used_as_spec(wrapping_sub)]
+            pub assume_specification[<$uN>::wrapping_sub](x: $uN, y: $uN) -> (res: $uN)
+                ensures res == wrapping_sub(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::checked_mul](x: $uN, y: $uN) -> Option<$uN>
-                returns (
-                    if x * y > <$uN>::MAX {
-                        None
-                    } else {
-                        Some((x * y) as $uN)
-                    }
-                );
+            pub open spec fn checked_add(x: $uN, y: $uN) -> Option<$uN> {
+                if x + y > <$uN>::MAX {
+                    None
+                } else {
+                    Some((x + y) as $uN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_add)]
+            pub assume_specification[<$uN>::checked_add](x: $uN, y: $uN) -> (res: Option<$uN>)
+                ensures res == checked_add(x, y);
+
+            pub open spec fn checked_add_signed(x: $uN, y: $iN) -> Option<$uN> {
+                if x + y > <$uN>::MAX || x + y < 0 {
+                    None
+                } else {
+                    Some((x + y) as $uN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_add_signed)]
+            pub assume_specification[<$uN>::checked_add_signed](x: $uN, y: $iN) -> (res: Option<$uN>)
+                ensures res == checked_add_signed(x, y);
+
+            pub open spec fn checked_sub(x: $uN, y: $uN) -> Option<$uN> {
+                if x - y < 0 {
+                    None
+                } else {
+                    Some((x - y) as $uN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_sub)]
+            pub assume_specification[<$uN>::checked_sub](x: $uN, y: $uN) -> (res: Option<$uN>)
+                ensures res == checked_sub(x, y);
+
+            pub open spec fn checked_mul(x: $uN, y: $uN) -> Option<$uN> {
+                if x * y > <$uN>::MAX {
+                    None
+                } else {
+                    Some((x * y) as $uN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_mul)]
+            pub assume_specification[<$uN>::checked_mul](lhs: $uN, rhs: $uN) -> (result: Option<$uN>)
+                ensures
+                    result == checked_mul(lhs, rhs);
 
             pub open spec fn checked_div(x: $uN, y: $uN) -> Option<$uN> {
                 if y == 0 {
@@ -115,39 +130,45 @@ macro_rules! num_specs {
             pub assume_specification[<$iN as Clone>::clone](x: &$iN) -> (res: $iN)
                 ensures res == x;
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::wrapping_add](x: $iN, y: $iN) -> $iN
-                returns (
-                    if x + y > <$iN>::MAX {
-                        (x + y - $range) as $iN
-                    } else if x + y < <$iN>::MIN {
-                        (x + y + $range) as $iN
-                    } else {
-                        (x + y) as $iN
-                    }
-                );
+            pub open spec fn wrapping_add(x: $iN, y: $iN) -> $iN {
+                if x + y > <$iN>::MAX {
+                    (x + y - $range) as $iN
+                } else if x + y < <$iN>::MIN {
+                    (x + y + $range) as $iN
+                } else {
+                    (x + y) as $iN
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::wrapping_add_unsigned](x: $iN, y: $uN) -> $iN
-                returns (
-                    if x + y > <$iN>::MAX {
-                        (x + y - $range) as $iN
-                    } else {
-                        (x + y) as $iN
-                    }
-                );
+            #[verifier::when_used_as_spec(wrapping_add)]
+            pub assume_specification[<$iN>::wrapping_add](x: $iN, y: $iN) -> (res: $iN)
+                ensures res == wrapping_add(x, y);
 
-            #[verifier::allow_in_spec]
+            pub open spec fn wrapping_add_unsigned(x: $iN, y: $uN) -> $iN {
+                if x + y > <$iN>::MAX {
+                    (x + y - $range) as $iN
+                } else {
+                    (x + y) as $iN
+                }
+            }
+
+            #[verifier::when_used_as_spec(wrapping_add_unsigned)]
+            pub assume_specification[<$iN>::wrapping_add_unsigned](x: $iN, y: $uN) -> (res: $iN)
+                ensures res == wrapping_add_unsigned(x, y);
+
+            pub open spec fn wrapping_sub(x: $iN, y: $iN) -> $iN {
+                if x - y > <$iN>::MAX {
+                    (x - y - $range) as $iN
+                } else if x - y < <$iN>::MIN {
+                    (x - y + $range) as $iN
+                } else {
+                    (x - y) as $iN
+                }
+            }
+
+            #[verifier::when_used_as_spec(wrapping_sub)]
             pub assume_specification[<$iN>::wrapping_sub](x: $iN, y: $iN) -> (res: $iN)
-                returns (
-                    if x - y > <$iN>::MAX {
-                        (x - y - $range) as $iN
-                    } else if x - y < <$iN>::MIN {
-                        (x - y + $range) as $iN
-                    } else {
-                        (x - y) as $iN
-                    }
-                );
+                ensures res == wrapping_sub(x, y);
 
             pub open spec fn signed_crop(x: int) -> $iN {
                 if (x % ($range as int)) > (<$iN>::MAX as int) {
@@ -157,69 +178,85 @@ macro_rules! num_specs {
                 }
             }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::wrapping_mul](x: $iN, y: $iN) -> $iN
-                returns signed_crop(x * y);
+            pub open spec fn wrapping_mul(x: $iN, y: $iN) -> $iN {
+                signed_crop(x * y)
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::checked_add](x: $iN, y: $iN) -> Option<$iN>
-                returns (
-                    if x + y > <$iN>::MAX || x + y < <$iN>::MIN {
-                        None
-                    } else {
-                        Some((x + y) as $iN)
-                    }
-                );
+            #[verifier::when_used_as_spec(wrapping_mul)]
+            pub assume_specification[<$iN>::wrapping_mul](x: $iN, y: $iN) -> (res: $iN)
+                ensures res == wrapping_mul(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::checked_add_unsigned](x: $iN, y: $uN) -> Option<$iN>
-                returns (
-                    if x + y > <$iN>::MAX {
-                        None
-                    } else {
-                        Some((x + y) as $iN)
-                    }
-                );
+            pub open spec fn checked_add(x: $iN, y: $iN) -> Option<$iN> {
+                if x + y > <$iN>::MAX || x + y < <$iN>::MIN {
+                    None
+                } else {
+                    Some((x + y) as $iN)
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$uN>::saturating_add](x: $uN, y: $uN) -> $uN
-                returns (
-                    if x + y > <$uN>::MAX {
-                        <$uN>::MAX
-                    } else {
-                        (x + y) as $uN
-                    }
-                );
+            #[verifier::when_used_as_spec(checked_add)]
+            pub assume_specification[<$iN>::checked_add](x: $iN, y: $iN) -> (res: Option<$iN>)
+                ensures res == checked_add(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::checked_sub](x: $iN, y: $iN) -> Option<$iN>
-                returns (
-                    if x - y > <$iN>::MAX || x - y < <$iN>::MIN {
-                        None
-                    } else {
-                        Some((x - y) as $iN)
-                    }
-                );
+            pub open spec fn checked_add_unsigned(x: $iN, y: $uN) -> Option<$iN> {
+                if x + y > <$iN>::MAX {
+                    None
+                } else {
+                    Some((x + y) as $iN)
+                }
+            }
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::checked_sub_unsigned](x: $iN, y: $uN) -> Option<$iN>
-                returns (
-                    if x - y < <$iN>::MIN {
-                        None
-                    } else {
-                        Some((x - y) as $iN)
-                    }
-                );
+            #[verifier::when_used_as_spec(checked_add_unsigned)]
+            pub assume_specification[<$iN>::checked_add_unsigned](x: $iN, y: $uN) -> (res: Option<$iN>)
+                ensures res == checked_add_unsigned(x, y);
 
-            #[verifier::allow_in_spec]
-            pub assume_specification[<$iN>::checked_mul](x: $iN, y: $iN) -> Option<$iN>
-                returns (
-                    if x * y > <$iN>::MAX || x * y < <$iN>::MIN {
-                        None
-                    } else {
-                        Some((x * y) as $iN)
-                    }
-                );
+            pub open spec fn saturating_add(x: $uN, y: $uN) -> $uN {
+                if x + y > <$uN>::MAX {
+                    <$uN>::MAX
+                } else {
+                    (x + y) as $uN
+                }
+            }
+
+            #[verifier::when_used_as_spec(saturating_add)]
+            pub assume_specification[<$uN>::saturating_add](x: $uN, y: $uN) -> (res: $uN)
+                ensures res == saturating_add(x, y);
+
+            pub open spec fn checked_sub(x: $iN, y: $iN) -> Option<$iN> {
+                if x - y > <$iN>::MAX || x - y < <$iN>::MIN {
+                    None
+                } else {
+                    Some((x - y) as $iN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_sub)]
+            pub assume_specification[<$iN>::checked_sub](x: $iN, y: $iN) -> (res: Option<$iN>)
+                ensures res == checked_sub(x, y);
+
+            pub open spec fn checked_sub_unsigned(x: $iN, y: $uN) -> Option<$iN> {
+                if x - y < <$iN>::MIN {
+                    None
+                } else {
+                    Some((x - y) as $iN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_sub_unsigned)]
+            pub assume_specification[<$iN>::checked_sub_unsigned](x: $iN, y: $uN) -> (res: Option<$iN>)
+                ensures res == checked_sub_unsigned(x, y);
+
+            pub open spec fn checked_mul(x: $iN, y: $iN) -> Option<$iN> {
+                if x * y > <$iN>::MAX || x * y < <$iN>::MIN {
+                    None
+                } else {
+                    Some((x * y) as $iN)
+                }
+            }
+
+            #[verifier::when_used_as_spec(checked_mul)]
+            pub assume_specification[<$iN>::checked_mul](x: $iN, y: $iN) -> (res: Option<$iN>)
+                ensures res == checked_mul(x, y);
         }
 
         }
@@ -239,20 +276,20 @@ verus! {
 // == u32 methods ==
 pub assume_specification[ u32::checked_rem ](lhs: u32, rhs: u32) -> (result: Option<u32>)
     ensures
-        rhs == 0 ==> result is None,
+        rhs == 0 ==> result.is_None(),
         rhs != 0 ==> result == Some((lhs % rhs) as u32),
 ;
 
 pub assume_specification[ u32::checked_rem_euclid ](lhs: u32, rhs: u32) -> (result: Option<u32>)
     ensures
-        rhs == 0 ==> result is None,
+        rhs == 0 ==> result.is_None(),
         rhs != 0 ==> result == Some((lhs % rhs) as u32),
 ;
 
 // == i32 methods ==
 pub assume_specification[ i32::checked_div ](lhs: i32, rhs: i32) -> (result: Option<i32>)
     ensures
-        rhs == 0 ==> result is None,
+        rhs == 0 ==> result.is_None(),
         ({
             let x = lhs as int;
             let d = rhs as int;
@@ -268,7 +305,7 @@ pub assume_specification[ i32::checked_div ](lhs: i32, rhs: i32) -> (result: Opt
                 (x / (d * -1)) * -1
             };
             if output < i32::MIN || output > i32::MAX {
-                result is None
+                result.is_None()
             } else {
                 result == Some(output as i32)
             }
@@ -277,14 +314,14 @@ pub assume_specification[ i32::checked_div ](lhs: i32, rhs: i32) -> (result: Opt
 
 pub assume_specification[ i32::checked_div_euclid ](lhs: i32, rhs: i32) -> (result: Option<i32>)
     ensures
-        rhs == 0 ==> result is None,
-        lhs / rhs < i32::MIN || lhs / rhs > i32::MAX ==> result is None,
+        rhs == 0 ==> result.is_None(),
+        lhs / rhs < i32::MIN || lhs / rhs > i32::MAX ==> result.is_None(),
         i32::MIN <= lhs / rhs <= i32::MAX ==> result == Some((lhs / rhs) as i32),
 ;
 
 pub assume_specification[ i32::checked_rem ](lhs: i32, rhs: i32) -> (result: Option<i32>)
     ensures
-        rhs == 0 ==> result is None,
+        rhs == 0 ==> result.is_None(),
         ({
             let x = lhs as int;
             let d = rhs as int;
@@ -300,7 +337,7 @@ pub assume_specification[ i32::checked_rem ](lhs: i32, rhs: i32) -> (result: Opt
                 x % (d * -1)
             };
             if output < i32::MIN || output > i32::MAX {
-                result is None
+                result.is_None()
             } else {
                 result == Some(output as i32)
             }
@@ -309,8 +346,8 @@ pub assume_specification[ i32::checked_rem ](lhs: i32, rhs: i32) -> (result: Opt
 
 pub assume_specification[ i32::checked_rem_euclid ](lhs: i32, rhs: i32) -> (result: Option<i32>)
     ensures
-        rhs == 0 ==> result is None,
-        lhs % rhs < i32::MIN || lhs % rhs > i32::MAX ==> result is None,
+        rhs == 0 ==> result.is_None(),
+        lhs % rhs < i32::MIN || lhs % rhs > i32::MAX ==> result.is_None(),
         i32::MIN <= lhs % rhs <= i32::MAX ==> result == Some((lhs % rhs) as i32),
 ;
 

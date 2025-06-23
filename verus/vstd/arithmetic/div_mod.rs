@@ -51,7 +51,7 @@ use super::super::arithmetic::mul::*;
 *****************************************************************************/
 
 /// Proof that, for the case of `x / d`, division using `/` is
-/// equivalent to a recursive definition of division.
+/// equivalent to a recursive definition of division
 pub broadcast proof fn lemma_div_is_div_recursive(x: int, d: int)
     requires
         0 < d,
@@ -64,7 +64,7 @@ pub broadcast proof fn lemma_div_is_div_recursive(x: int, d: int)
 }
 
 /// Proof that the quotient of an integer divided by itself is 1,
-/// specifically that `d / d == 1`.
+/// specifically that `d / d == 1`
 pub proof fn lemma_div_by_self(d: int)
     requires
         d != 0,
@@ -74,7 +74,7 @@ pub proof fn lemma_div_by_self(d: int)
     DivINL::lemma_div_by_self(d);
 }
 
-/// Proof that 0 divided by a nonzero integer is 0, specifically `0 / d == 0`.
+/// Proof that 0 divided by a nonzero integer is 0, specifically `0 / d == 0`
 pub proof fn lemma_div_of0(d: int)
     requires
         d != 0,
@@ -99,7 +99,6 @@ pub proof fn lemma_div_basics(x: int)
     }
 }
 
-/// Proof for basic property that 0 divided by `x` is 0.
 pub broadcast proof fn lemma_div_basics_1(x: int)
     ensures
         x != 0 as int ==> #[trigger] (0int / x) == 0,
@@ -107,7 +106,6 @@ pub broadcast proof fn lemma_div_basics_1(x: int)
     lemma_div_basics(x);
 }
 
-/// Proof for basic property that `x` divided by 1 is `x`.
 pub broadcast proof fn lemma_div_basics_2(x: int)
     ensures
         #[trigger] (x / 1) == x,
@@ -115,7 +113,6 @@ pub broadcast proof fn lemma_div_basics_2(x: int)
     lemma_div_basics(x);
 }
 
-/// Proof for basic property that `x` divided by `x` is 1.
 pub broadcast proof fn lemma_div_basics_3(x: int)
     ensures
         x != 0 ==> #[trigger] (x / x) == 1,
@@ -123,15 +120,12 @@ pub broadcast proof fn lemma_div_basics_3(x: int)
     lemma_div_basics(x);
 }
 
-/// Proof that dividing any non-negative integer by a positive integer is non-zero.
 pub broadcast proof fn lemma_div_basics_4(x: int, y: int)
     ensures
         x >= 0 && y > 0 ==> #[trigger] (x / y) >= 0,
 {
 }
 
-/// Proof that the quotient produced by dividing any non-negative integer `x`
-/// by a positive integer `y` is at most `x`.
 pub broadcast proof fn lemma_div_basics_5(x: int, y: int)
     ensures
         x >= 0 && y > 0 ==> #[trigger] (x / y) <= x,
@@ -150,9 +144,21 @@ pub broadcast group group_div_basics {
     lemma_div_basics_5,
 }
 
+// Check that the group_div_basics broadcast group group_provides the same properties as the _auto lemma it replaces
+proof fn lemma_div_basics_prove_auto()
+    ensures
+        forall|x: int| x != 0 ==> #[trigger] (0int / x) == 0,
+        forall|x: int| #[trigger] (x / 1) == x,
+        forall|x: int, y: int| x >= 0 && y > 0 ==> #[trigger] (x / y) >= 0,
+        forall|x: int, y: int| x >= 0 && y > 0 ==> #[trigger] (x / y) <= x,
+{
+    broadcast use group_div_basics;
+
+}
+
 /// Proof that if a dividend is a whole number, the divisor is a
 /// natural number, and their quotient is 0, then the dividend is
-/// smaller than the divisor.
+/// smaller than the divisor
 pub broadcast proof fn lemma_small_div_converse(x: int, d: int)
     ensures
         0 <= x && 0 < d && #[trigger] (x / d) == 0 ==> x < d,
@@ -163,8 +169,8 @@ pub broadcast proof fn lemma_small_div_converse(x: int, d: int)
 }
 
 /// Proof that division of a positive integer by a positive integer
-/// less than or equal to it is nonzero. Specifically,
-/// given that `x >= d`, we can conclude that `x / d > 0`.
+/// less than or equal to it is nonzero. Specifically, given that `x
+/// >= d`, we can conclude that `x / d > 0`.
 pub proof fn lemma_div_non_zero(x: int, d: int)
     requires
         x >= d > 0,
@@ -222,7 +228,7 @@ pub broadcast proof fn lemma_div_is_strictly_smaller(x: int, d: int)
 }
 
 /// Proof that, given `r == a % d + b % d - (a + b) % d`, `r` can also
-/// be expressed as `d * ((a + b) / d) - d * (a / d) - d * (b / d)`.
+/// be expressed as `d * ((a + b) / d) - d * (a / d) - d * (b / d)`
 pub broadcast proof fn lemma_dividing_sums(a: int, b: int, d: int, r: int)
     requires
         0 < d,
@@ -282,7 +288,7 @@ pub broadcast proof fn lemma_div_minus_one(x: int, d: int)
 }
 
 /// Proof that dividing any non-negative integer less than `d` by `d`
-/// produces a quotient of 0.
+/// produces a quotient of 0
 pub proof fn lemma_basic_div_specific_divisor(d: int)
     requires
         0 < d,
@@ -293,7 +299,7 @@ pub proof fn lemma_basic_div_specific_divisor(d: int)
 }
 
 /// Proof that dividing any non-negative integer by a larger integer
-/// produces a quotient of 0.
+/// produces a quotient of 0
 pub broadcast proof fn lemma_basic_div(x: int, d: int)
     requires
         0 <= x < d,
@@ -370,6 +376,39 @@ pub proof fn lemma_small_mod(x: nat, m: nat)
     ModINL::lemma_small_mod(x, m);
 }
 
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_distributive_auto()
+    ensures
+        forall|x: int, y: int, z: int| #[trigger] (x * (y + z)) == x * y + x * z,
+        forall|x: int, y: int, z: int| #[trigger] ((y + z) * x) == y * x + z * x,
+        forall|x: int, y: int, z: int| #[trigger] (x * (y - z)) == x * y - x * z,
+        forall|x: int, y: int, z: int| #[trigger] ((y - z) * x) == y * x - z * x,
+{
+    broadcast use group_mul_is_distributive;
+
+}
+
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_commutative_auto()
+    ensures
+        forall|x: int, y: int| #[trigger] (x * y) == y * x,
+{
+    broadcast use lemma_mul_is_commutative;
+
+}
+
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_basics_auto()
+    ensures
+        forall|x: int| #[trigger] (0 * x) == 0,
+        forall|x: int| #[trigger] (x * 0) == 0,
+        forall|x: int| #[trigger] (x * 1) == x,
+        forall|x: int| #[trigger] (1 * x) == x,
+{
+    broadcast use group_mul_basics;
+
+}
+
 /// The remainder of a nonnegative integer `x` divided by the product of two positive integers
 /// `y` and `z` is equivalent to dividing `x` by `y`, dividing the quotient by `z`, multiplying
 /// the remainder by `y`, and then adding the product to the remainder of `x` divided by `y`.
@@ -396,12 +435,10 @@ pub broadcast proof fn lemma_breakdown(x: int, y: int, z: int)
             lemma_part_bound2(x, y, z);
         }
         y * (z - 1) + y; (==) {
-            broadcast use group_mul_basics;
-
+            lemma_mul_basics_auto();
         }
-        y * (z - 1) + y * 1; (==) {
-            broadcast use group_mul_is_distributive;
-
+        y * (z - 1) + y * 1; (==) {  /* TODO(broadcast_use) */
+            lemma_mul_is_distributive_auto();
         }
         y * (z - 1 + 1); (==) {}
         y * z;
@@ -412,17 +449,16 @@ pub broadcast proof fn lemma_breakdown(x: int, y: int, z: int)
             ModINL::lemma_fundamental_div_mod(x, y);
         }
         (y * (x / y) + x % y) % (y * z); {
-            broadcast use group_mod_properties;
-
+            lemma_mod_properties_auto();
             assert(0 <= x % y);
             lemma_mul_nonnegative(y, x / y);
             assert((y * (x / y)) % (y * z) + (x % y) % (y * z) < y * z);
             lemma_mod_adds(y * (x / y), x % y, y * z);
         }
         (y * (x / y)) % (y * z) + (x % y) % (y * z); {
-            broadcast use {group_mod_properties, lemma_mul_is_commutative};
-
+            lemma_mod_properties_auto();
             lemma_mul_increases(z, y);
+            lemma_mul_is_commutative_auto();
             // comparison op can't be chained in calc!
             // assert forall is also not avaialable in calc!
             assert((x % y) < y && y <= (y * z));
@@ -438,7 +474,7 @@ pub broadcast proof fn lemma_breakdown(x: int, y: int, z: int)
 
 /// Proof that the difference between a nonnegative integer `x` and a
 /// positive integer `d` must be strictly less than the quotient of
-/// `x` divided by `d` and then multiplied by `d`.
+/// `x` divided by `d` and then multiplied by `d`
 pub broadcast proof fn lemma_remainder_upper(x: int, d: int)
     requires
         0 <= x,
@@ -454,7 +490,7 @@ pub broadcast proof fn lemma_remainder_upper(x: int, d: int)
 
 /// Proof that the division of a nonnegative integer `x` by a positive
 /// integer `d` multiplied by `d` is less than or equal to the value
-/// of `x`.
+/// of `x`
 pub broadcast proof fn lemma_remainder_lower(x: int, d: int)
     requires
         0 <= x,
@@ -470,7 +506,7 @@ pub broadcast proof fn lemma_remainder_lower(x: int, d: int)
 /// Proof that the difference between a nonnegative integer `x` and
 /// the division of `x` by a positive integer `d` multiplied by `d` is
 /// lower bounded (inclusively) by 0 and upper bounded (exclusively)
-/// by `d`.
+/// by `d
 pub broadcast proof fn lemma_remainder(x: int, d: int)
     requires
         0 <= x,
@@ -497,8 +533,20 @@ pub broadcast proof fn lemma_fundamental_div_mod(x: int, d: int)
     }
 }
 
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_associative_auto()
+    ensures
+        forall|x: int, y: int, z: int|
+            #![trigger x * (y * z)]
+            #![trigger (x * y) * z]
+            x * (y * z) == (x * y) * z,
+{
+    broadcast use lemma_mul_is_associative;
+
+}
+
 /// Proof that dividing `x` by `c * d` is equivalent to first dividing
-/// `x` by `c` and then dividing the result by `d`.
+/// `x` by `c` and then dividing the result by `d`
 pub broadcast proof fn lemma_div_denominator(x: int, c: int, d: int)
     requires
         0 <= x,
@@ -530,9 +578,8 @@ pub broadcast proof fn lemma_div_denominator(x: int, c: int, d: int)
     calc! {
         (==)
         c * ((x / c) % d) + x % c; {
-            broadcast use lemma_mul_is_commutative;
-
             lemma_mod_multiples_vanish(-k, x / c, d);
+            lemma_mul_is_commutative_auto();
         }
         c * ((x / c + (-k) * d) % d) + x % c; {
             lemma_hoist_over_denominator(x, (-k) * d, c as nat);
@@ -548,8 +595,8 @@ pub broadcast proof fn lemma_div_denominator(x: int, c: int, d: int)
         }
         c * (((x + (-(k * d * c))) / c) % d) + x % c; {}
         c * (((x - k * d * c) / c) % d) + x % c; {
-            broadcast use {lemma_mul_is_associative, lemma_mul_is_commutative};
-
+            lemma_mul_is_associative_auto();
+            lemma_mul_is_commutative_auto();
         }
         c * ((r / c) % d) + x % c; {}
         c * (r / c) + x % c; {
@@ -559,8 +606,8 @@ pub broadcast proof fn lemma_div_denominator(x: int, c: int, d: int)
             assert(r % c == x % c);
         }
         r; {
-            broadcast use {group_mod_properties, lemma_mod_is_mod_recursive};
-
+            lemma_mod_properties_auto();
+            lemma_mod_is_mod_recursive_auto();
         }
         r % (c * d); {}
         (x - (c * d) * k) % (c * d); {
@@ -612,16 +659,16 @@ pub broadcast proof fn lemma_mul_hoist_inequality(x: int, y: int, z: int)
             lemma_fundamental_div_mod(y, z);
         }
         (x * (z * (y / z) + y % z)) / z; (==) {
-            broadcast use group_mul_is_distributive;
-
+            lemma_mul_is_distributive_auto();
         }
         (x * (z * (y / z)) + x * (y % z)) / z;
     }
     assert((x * (z * (y / z)) + x * (y % z)) / z >= x * (y / z)) by {
-        broadcast use {group_mod_properties, lemma_mul_is_associative, lemma_mul_is_commutative};
-
+        lemma_mod_properties_auto();
         lemma_mul_nonnegative(x, y % z);
         lemma_div_is_ordered(x * (z * (y / z)), x * (z * (y / z)) + x * (y % z), z);
+        lemma_mul_is_associative_auto();
+        lemma_mul_is_commutative_auto();
         lemma_div_multiples_vanish(x * (y / z), z);
     };
 }
@@ -665,7 +712,7 @@ pub proof fn lemma_truncate_middle(x: int, b: int, c: int)
         0 < b * c,
         (b * x) % (b * c) == b * (x % c),
 {
-    broadcast use {lemma_mul_strictly_positive, lemma_mul_nonnegative};
+    broadcast use lemma_mul_strictly_positive, lemma_mul_nonnegative;
 
     calc! {
         (==)
@@ -676,16 +723,15 @@ pub proof fn lemma_truncate_middle(x: int, b: int, c: int)
             lemma_div_denominator(b * x, b, c);
         }
         (b * c) * (((b * x) / b) / c) + (b * x) % (b * c); {
-            broadcast use lemma_mul_is_commutative;
-
+            lemma_mul_is_commutative_auto();
             lemma_div_by_multiple(x, b);
         }
         (b * c) * (x / c) + (b * x) % (b * c);
     }
     assert(b * x == (b * c) * (x / c) + b * (x % c)) by {
         ModINL::lemma_fundamental_div_mod(x, c);
-        broadcast use {group_mul_is_distributive, lemma_mul_is_associative};
-
+        lemma_mul_is_distributive_auto();
+        lemma_mul_is_associative_auto();
     };
 }
 
@@ -717,7 +763,7 @@ pub broadcast proof fn lemma_div_multiples_vanish_quotient(x: int, a: int, d: in
 }
 
 /// Proof that, since `a % d == 0` and `0 <= r < d`, we can conclude
-/// `a == d * (a + r) / d`.
+/// `a == d * (a + r) / d`
 pub broadcast proof fn lemma_round_down(a: int, r: int, d: int)
     requires
         0 < d,
@@ -732,7 +778,7 @@ pub broadcast proof fn lemma_round_down(a: int, r: int, d: int)
     lemma_div_induction_auto(d, a, |u: int| u % d == 0 ==> u == d * ((u + r) / d));
 }
 
-/// Proof that, since `0 <= b < d`, we have `(d * x + b) / d == x`.
+/// Proof that, since `0 <= b < d`, we have `(d * x + b) / d == x`
 pub broadcast proof fn lemma_div_multiples_vanish_fancy(x: int, b: int, d: int)
     requires
         0 < d,
@@ -915,17 +961,15 @@ pub broadcast proof fn lemma_part_bound1(a: int, b: int, c: int)
             ModINL::lemma_fundamental_div_mod(b * (a / b), b * c);
         }
         b * (a / b) - (b * c) * ((b * (a / b)) / (b * c)); {
-            broadcast use lemma_mul_is_associative;
-
+            lemma_mul_is_associative_auto();
         }
         b * (a / b) - b * (c * ((b * (a / b)) / (b * c))); {
-            broadcast use group_mul_is_distributive;
-
+            lemma_mul_is_distributive_auto();
         }
         b * ((a / b) - (c * ((b * (a / b)) / (b * c))));
     }
     assert(b * (a / b) % (b * c) <= b * (c - 1)) by {
-        broadcast use {lemma_mul_is_commutative, lemma_mul_inequality};
+        broadcast use lemma_mul_is_commutative, lemma_mul_inequality;
 
     };
 }
@@ -961,12 +1005,10 @@ pub broadcast proof fn lemma_mod_is_mod_recursive(x: int, m: int)
                 lemma_add_mod_noop(x, m, m);
             }
             ((x % m) + (m % m)) % m; {
-                broadcast use {lemma_mod_self_0, lemma_mod_twice};
-
+                lemma_mod_basics_auto();
             }
             (x % m) % m; {
-                broadcast use {lemma_mod_self_0, lemma_mod_twice};
-
+                lemma_mod_basics_auto();
             }
             x % m;
         }
@@ -983,16 +1025,33 @@ pub broadcast proof fn lemma_mod_is_mod_recursive(x: int, m: int)
                 lemma_sub_mod_noop(x, m, m);
             }
             ((x % m) - (m % m)) % m; {
-                broadcast use {lemma_mod_self_0, lemma_mod_twice};
-
+                lemma_mod_basics_auto();
             }
             (x % m) % m; {
-                broadcast use {lemma_mod_self_0, lemma_mod_twice};
-
+                lemma_mod_basics_auto();
             }
             x % m;
         }
     }
+}
+
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mod_is_mod_recursive_auto()
+    ensures
+        forall|x: int, d: int| d > 0 ==> mod_recursive(x, d) == #[trigger] (x % d),
+{
+    broadcast use lemma_mod_is_mod_recursive;
+
+}
+
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mod_basics_auto()
+    ensures
+        forall|m: int| m > 0 ==> #[trigger] (m % m) == 0,
+        forall|x: int, m: int| m > 0 ==> #[trigger] ((x % m) % m) == x % m,
+{
+    broadcast use lemma_mod_self_0, lemma_mod_twice;
+
 }
 
 /// Proof that any integer divided by itself produces a remainder of 0.
@@ -1033,6 +1092,18 @@ pub broadcast proof fn lemma_mod_division_less_than_divisor(x: int, m: int)
 pub broadcast group group_mod_properties {
     group_mod_basics,
     lemma_mod_division_less_than_divisor,
+}
+
+// Check that the mod_properties_auto broadcast group group_provides the same properties as the _auto lemma it replaces
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mod_properties_auto()
+    ensures
+        forall|m: int| m > 0 ==> #[trigger] (m % m) == 0,
+        forall|x: int, m: int| m > 0 ==> #[trigger] ((x % m) % m) == x % m,
+        forall|x: int, m: int| m > 0 ==> 0 <= #[trigger] (x % m) < m,
+{
+    broadcast use group_mod_properties;
+
 }
 
 /// Proof that when natural number `x` is divided by natural number
@@ -1214,17 +1285,18 @@ pub proof fn lemma_mod_neg_neg(x: int, d: int)
     ensures
         x % d == (x * (1 - d)) % d,
 {
-    broadcast use group_mul_properties_internal;
-
     assert((x - x * d) % d == x % d) by {
         let f = |i: int| (x - i * d) % d == x % d;
         assert(f(0) && (forall|i: int| i >= 0 && #[trigger] f(i) ==> #[trigger] f(add1(i, 1))) && (
         forall|i: int| i <= 0 && #[trigger] f(i) ==> #[trigger] f(sub1(i, 1)))) by {
+            broadcast use group_mul_properties_internal;
+
             lemma_mod_auto(d);
         };
         lemma_mul_induction(f);
         assert(f(x));
     }
+    broadcast use group_mul_properties_internal;
 
 }
 
@@ -1353,6 +1425,22 @@ pub broadcast group group_fundamental_div_mod_converse {
     lemma_fundamental_div_mod_converse_div,
 }
 
+// Check that the group_fundamental_div_mod_converse broadcast group group_provides the same properties as the _auto lemma it replaces
+/// Proof of the converse of the fundamental property of division and
+/// modulo. That is, whenever `0 <= r < d` and `x == q * d + r`, we
+/// know that `q` is the quotient `x / d` and `r` is the remainder `x % d`.
+proof fn lemma_fundamental_div_mod_converse_prove_auto()
+    ensures  // forall |x: int, d: int, q: int, r: int| d != 0 && 0 <= r < d && x == #[trigger](q * d + r) ==> q == (x / d) && r == #[trigger](x % d),
+
+        forall|x: int, d: int, q: int, r: int|
+            d != 0 && 0 <= r < d && x == #[trigger] (q * d + r) ==> q == #[trigger] (x / d),
+        forall|x: int, d: int, q: int, r: int|
+            d != 0 && 0 <= r < d && x == #[trigger] (q * d + r) ==> r == #[trigger] (x % d),
+{
+    broadcast use group_fundamental_div_mod_converse;
+
+}
+
 /// Proof that the remainder, when natural number `x` is divided by
 /// positive integer `m`, is less than `m`.
 pub broadcast proof fn lemma_mod_pos_bound(x: int, m: int)
@@ -1377,7 +1465,7 @@ pub broadcast proof fn lemma_mod_bound(x: int, m: int)
 }
 
 /// Proof that the remainder when `x * y` is divided by `m` is
-/// equivalent to the remainder when `(x % m) * y` is divided by `m`.
+/// equivalent to the remainder when `(x % m) * y` is divided by `m`
 pub broadcast proof fn lemma_mul_mod_noop_left(x: int, y: int, m: int)
     requires
         0 < m,
@@ -1455,7 +1543,7 @@ pub open spec fn is_mod_equivalent(x: int, y: int, m: int) -> bool
 }
 
 /// Proof that if `is_mod_equivalent` holds for `x`, `y`, and `m`,
-/// then it holds for `x * z`, `y * z`, and `m`.
+/// then it holds for `x * z`, `y * z`, and `m`
 pub broadcast proof fn lemma_mod_mul_equivalent(x: int, y: int, z: int, m: int)
     requires
         m > 0,
@@ -1467,6 +1555,15 @@ pub broadcast proof fn lemma_mod_mul_equivalent(x: int, y: int, z: int, m: int)
     lemma_mul_mod_noop_left(y, z, m);
     lemma_mod_equivalence(x, y, m);
     lemma_mod_equivalence(x * z, y * z, m);
+}
+
+// TODO: temporarily needed until `broadcast use` can be used in calc!
+proof fn lemma_mul_is_distributive_sub_auto()
+    ensures
+        forall|x: int, y: int, z: int| #[trigger] (x * (y - z)) == x * y - x * z,
+{
+    broadcast use lemma_mul_is_distributive_sub;
+
 }
 
 /// Proof that multiplying the divisor by a positive number can't
@@ -1490,23 +1587,20 @@ pub broadcast proof fn lemma_mod_ordering(x: int, k: int, d: int)
             lemma_fundamental_div_mod(x, d * k);
         }
         x % (d * k) + (d * k) * (x / (d * k)); {
-            broadcast use lemma_mul_is_associative;
-
+            lemma_mul_is_associative_auto();
         }
         x % (d * k) + d * (k * (x / (d * k)));
     }
     calc! {
         (==)
         x % d; {
-            broadcast use group_mod_properties;
-
+            lemma_mod_properties_auto();
         }
         (x % d) % d; {
             lemma_mod_multiples_vanish(x / d - k * (x / (d * k)), x % d, d);
         }
         (x % d + d * (x / d - k * (x / (d * k)))) % d; {
-            broadcast use lemma_mul_is_distributive_sub;
-
+            lemma_mul_is_distributive_sub_auto();
         }
         (x % d + d * (x / d) - d * (k * (x / (d * k)))) % d; {}
         (x % (d * k)) % d;
@@ -1538,19 +1632,17 @@ pub broadcast proof fn lemma_mod_mod(x: int, a: int, b: int)
             lemma_fundamental_div_mod(x, a * b);
         }
         (a * b) * (x / (a * b)) + x % (a * b); {
-            broadcast use lemma_mul_is_associative;
-
+            lemma_mul_is_associative_auto();
         }
         a * (b * (x / (a * b))) + x % (a * b); {
             lemma_fundamental_div_mod(x % (a * b), a);
         }
         a * (b * (x / (a * b))) + a * (x % (a * b) / a) + (x % (a * b)) % a; {
-            broadcast use group_mul_is_distributive;
-
+            lemma_mul_is_distributive_auto();
         }
         a * (b * (x / (a * b)) + x % (a * b) / a) + (x % (a * b)) % a;
     }
-    broadcast use {group_mod_properties, lemma_mul_is_commutative};
+    broadcast use group_mod_properties, lemma_mul_is_commutative;
 
     lemma_fundamental_div_mod_converse(
         x,
@@ -1570,16 +1662,15 @@ pub broadcast proof fn lemma_part_bound2(x: int, y: int, z: int)
         y * z > 0,
         #[trigger] (x % y) % #[trigger] (y * z) < y,
 {
-    broadcast use {
-        lemma_mul_strictly_positive,
-        group_mod_properties,
-        lemma_mul_is_commutative,
-        lemma_mul_increases,
-    };
+    broadcast use lemma_mul_strictly_positive;
 
+    lemma_mod_properties_auto();
     assert(x % y < y);
+    broadcast use lemma_mul_is_commutative, lemma_mul_increases;
+
     assert(y <= y * z);
     assert(0 <= x % y < y * z);
+    lemma_mod_properties_auto();
     lemma_small_mod((x % y) as nat, (y * z) as nat);
     assert((x % y) % (y * z) == x % y);
 }
@@ -1603,8 +1694,8 @@ pub broadcast proof fn lemma_mod_breakdown(x: int, y: int, z: int)
     assert((y * (x / y)) % (y * z) + (x % y) % (y * z) < y * z) by {
         lemma_part_bound1(x, y, z);
         lemma_part_bound2(x, y, z);
-        broadcast use {group_mul_basics, group_mul_is_distributive};
-
+        lemma_mul_basics_auto();
+        lemma_mul_is_distributive_auto();
     };
     calc! {
         (==)
@@ -1612,17 +1703,16 @@ pub broadcast proof fn lemma_mod_breakdown(x: int, y: int, z: int)
             lemma_fundamental_div_mod(x, y);
         }
         (y * (x / y) + x % y) % (y * z); {
-            broadcast use group_mod_properties;
-
+            lemma_mod_properties_auto();
             assert(0 <= x % y);
             lemma_mul_nonnegative(y, x / y);
             assert((y * (x / y)) % (y * z) + (x % y) % (y * z) < y * z);
             lemma_mod_adds(y * (x / y), x % y, y * z);
         }
         (y * (x / y)) % (y * z) + (x % y) % (y * z); {
-            broadcast use {group_mod_properties, lemma_mul_is_commutative};
-
+            lemma_mod_properties_auto();
             lemma_mul_increases(z, y);
+            lemma_mul_is_commutative_auto();
             assert(x % y < y && y <= y * z);
             lemma_small_mod((x % y) as nat, (y * z) as nat);
             assert((x % y) % (y * z) == x % y);
