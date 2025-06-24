@@ -810,21 +810,7 @@ Here are some principles that you have to follow:
                     code = original_code
 
         # TODO! Add a step of proof action application.
-        from proof_action import debug_with_proof_actions_iter
-        import pandas as pd
-        result = debug_with_proof_actions_iter(
-            verus_path=self.config.verus_path,
-            code=code,
-            logger=self.logger,
-            num_iters=3,
-            llm=self.llm,
-            engine=self.config.aoai_generation_model,
-            root_abs_path="./rust_src"
-        )
-        df = pd.read_csv("result.csv")
-        df.at[len(df) - 1, 'has_proof_function'] = result
-        # 写回 CSV 文件
-        df.to_csv("result.csv", index=False)
+        
         
         if repair_steps > 0:
             (temp_dir / "before-repair.rs").write_text(

@@ -1,6 +1,8 @@
 __pycache__
 intermediate-[a-zA-Z0-9]*/
-default-query.txt
-example-default.txt
+[^\s]*-query.txt
+example-[^\s]*.txt
+[^\s]*-out.rs
 uv.lock
 .venv
+verus-analyzer

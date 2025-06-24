@@ -6,7 +6,7 @@ import pandas as pd
 
 # 设置路径
 benchmark_root = Path("../benchmarks")
-csv_path = Path("result.csv")  # 可自定义
+csv_path = Path("new_result.csv")  # 可自定义
 
 def row_exists(csv_path, name):
     try:
@@ -28,9 +28,6 @@ with open(csv_path, mode="a", newline="") as csvfile:
 
         for rs_file in unverified_dir.glob("*.rs"):
             rs_path_str = str(rs_file.resolve())
-
-            if row_exists(csv_path, rs_path_str):
-                continue
 
             # 写入路径和初始的 False
             writer.writerow([rs_path_str, False])

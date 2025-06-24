@@ -1,34 +1,27 @@
-
 use vstd::prelude::*;
 
 fn main() {}
 
-verus! {
-
-fn find_first_odd(arr: &Vec<u32>) -> (index: Option<usize>)
-    ensures
-        if let Some(idx) = index {
-            &&& arr@.take(idx as int) == arr@.take(idx as int).filter(|x: u32| x % 2 == 0)
-            &&& arr[idx as int] % 2 != 0
-        } else {
-            forall|k: int| 0 <= k < arr.len() ==> (arr[k] % 2 == 0)
-        },
-{
-    let input_len = arr.len();
-    let mut index = 0;
-
-    while index < arr.len()
-        invariant
-            index <= arr.len(),
-            forall |k: int| 0 <= k < arr.len() ==> (arr[k] % 2 == 0), // Modified to cover all elements because `arr` is never changed in the loop
-            arr.len() == input_len, // Loop invariant specifying the length of `arr`
-    {
-        if (arr[index] % 2 != 0) {
-            return Some(index);
-        }
-        index += 1;
-    }
-    None
+verus!{
+spec fn fibo(n: nat) -> nat 
+	decreases n
+{ 
+	if n == 0 { 0 } else if n == 1 { 1 } 
+	else { fibo((n - 2) as nat) + fibo((n - 1) as nat) } 
 }
 
-} // verus!
+proof fn fibo_is_monotonic(i: nat, j: nat)
+	requires i <= j,
+	ensures fibo(i) <= fibo(j),
+    decreases j - i
+{  
+	if i < 2 && j < 2 {}
+	else if i == j {}
+	else if i == j - 1 {
+		fibo_is_monotonic(i as nat, (j - 1) as nat);
+	} else { 
+		fibo_is_monotonic(i as nat, (j - 1) as nat);
+		fibo_is_monotonic(i as nat, (j - 2) as nat);
+	}
+}
+}

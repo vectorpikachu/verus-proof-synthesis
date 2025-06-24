@@ -1,0 +1,14 @@
+{
+    "range": {
+        "start": {
+            "line": 28,
+            "character": 8
+        },
+        "end": {
+            "line": 28,
+            "character": 26
+        }
+    },
+    "severity": 1,
+    "message": "        fibo(i) <= fibo(j)\n  assertion failed: fibo(i) <= fibo(j)"
+}

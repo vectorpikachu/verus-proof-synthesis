@@ -4,13 +4,101 @@ import os
 import re
 import subprocess
 from typing import List, Tuple
+from multilspy.multilspy_types import Position, Range
+from veval import VEval, verus
 from infer import LLM
-from lsp import check_proof_actions, create_lsp, run_verus
+from lsp import check_proof_actions, create_lsp
 from multilspy.language_server import SyncLanguageServer
-from multilspy.lsp_protocol_handler.lsp_types import CodeAction
+from multilspy.lsp_protocol_handler.lsp_types import CodeAction, Diagnostic
+
+def find_hover_ranges(
+        diag: Diagnostic,
+        code: str
+    ) -> List[Range]:
+    """
+    Find the hover ranges from a Diagnostic object.
+
+    Args:
+        diag: The Diagnostic object containing the error information
+        code: The source code as a string
+    
+    Returns:
+        A list of Range objects that can be used for hover actions.
+    """
+    keyword_range = None
+    ranges: List[Range] = []
+    line_index = diag["range"]["end"]["line"]
+    try:
+        source_lines = code.splitlines()
+        while line_index > 0:
+            line = source_lines[line_index]
+                
+            # Find assert keyword position
+            if "assert" in line:
+                assert_match = re.search(r'assert', line)
+                if assert_match:
+                    assert_start = assert_match.start()
+                    assert_end = assert_match.end()
+                    keyword_range = Range(
+                        start=Position(line=line_index, character=assert_start),
+                        end=Position(line=line_index, character=assert_end)
+                    )
+                    ranges.append(keyword_range)
+                    break
+                
+            if "ensures" in line:
+                ensures_match = re.search(r'ensures', line)
+                if ensures_match:
+                    ensures_start = ensures_match.start()
+                    ensures_end = ensures_match.end()
+                    keyword_range = Range(
+                        start=Position(line=line_index, character=ensures_start),
+                        end=Position(line=line_index, character=ensures_end)
+                    )
+                    ranges.append(keyword_range)
+                    break
+
+            # Find other possible hover targets
+            # Function calls
+            func_calls = re.finditer(r'(\w+)\s*\(', line)
+            for match in func_calls:
+                func_name_start = match.start(1)
+                func_name_end = match.end(1)
+                func_range = Range(
+                    start=Position(line=line_index, character=func_name_start),
+                    end=Position(line=line_index, character=func_name_end)
+                )
+                ranges.append(func_range)
+                
+            # <= operator
+            le_matches = re.finditer(r'<=', line)
+            for match in le_matches:
+                le_start = match.start()
+                le_end = match.end()
+                le_range = Range(
+                    start=Position(line=line_index, character=le_start),
+                    end=Position(line=line_index, character=le_end)
+                )
+                ranges.append(le_range)
+                
+            # Sequence expressions
+            seq_matches = re.finditer(r'\[[^\]]*\]', line)
+            for match in seq_matches:
+                seq_start = match.start()
+                seq_end = match.end()
+                seq_range = Range(
+                    start=Position(line=line_index, character=seq_start),
+                    end=Position(line=line_index, character=seq_end)
+                )
+                ranges.append(seq_range)
+                
+            line_index-=1
+    except Exception as e:
+        print(f"Error finding hover ranges: {e}")
+    
+    return ranges
 
 def debug_with_proof_actions_iter(
-        verus_path: str,
         code: str,
         logger: Logger,
         num_iters: int,
@@ -22,7 +110,6 @@ def debug_with_proof_actions_iter(
     Debugging the given code with proof actions iteratively.
 
     Args:
-        verus_path: Path to the Verus executable
         file_path: Path to the Rust source file to analyze
         logger: Logger instance for logging messages
         num_iters: Number of iterations to run the debugging process
@@ -50,19 +137,10 @@ def debug_with_proof_actions_iter(
     # Copy the contents of the file to the ./src/main.rs
     src_path = os.path.join(root_abs_path, "src", "main.rs")
     with open(src_path, "w") as f:
-            f.write(code)
+        f.write(code)
     logger.info(f"Now writing code to {src_path}")
 
     lsp = create_lsp(root_abs_path)
-
-    file_path = os.path.join(root_abs_path, "src", "main.rs")
-
-    return have_proof_action(
-        verus_path,
-        file_path,
-        logger,
-        lsp,
-    )
 
     system = """You are a helpful assistant that helps debug Rust code with proof actions. You will be given a piece of Rust code and you need to suggest proof actions to fix the code. Your mission is  to guide the user through applying ProofPlumber Proof Actions to debug Verus proof failures.
 Always:
@@ -147,10 +225,32 @@ Now debugging the code: <code>"""
         logger.info(f"Debugging iteration {nums + 1}/{num_iters}")
 
         now_query = query.replace("<code>", code)
+        # Find all the diagnostics in the code
+        veval: VEval = VEval(code, logger)
+        veval.eval()
+
+        diags: List[Diagnostic] = []
+        # Get all the hover ranges for the diagnostics
+        diag_hovers: List[Tuple[List[Range], Diagnostic]] = []
+        err = ""
+        
+        for i, error in enumerate(veval.verus_errors):
+            err += f"Error {i + 1}: {error.get_text()}\n"
+            diag = error.get_diagnostic()
+            diags.append(diag)
+            ranges = find_hover_ranges(diag, code)
+            if ranges:
+                diag_hovers.append((ranges, diag))
+
+        
+        # Change all ' to "
+        text = f"{diags}"
+        text = text.replace("'", '"')
+        print(text)
 
         action = debug_with_proof_actions(
-            verus_path,
-            file_path,
+            diag_hovers,
+            err,
             logger,
             lsp,
             llm,
@@ -161,6 +261,9 @@ Now debugging the code: <code>"""
             system,
         )
 
+        with open(src_path, "r") as f:
+            code = f.read()
+
         if action is None:
             logger.info("No action taken, stopping debugging.")
             break
@@ -169,18 +272,18 @@ Now debugging the code: <code>"""
         
         nums += 1
 
-    logger.info("Debugging completed.")
+    logger.info("Debugging procedure using proof actions have been completed.")
 
-    with open(src_path, "r") as f:
-        final_code = f.read()
-    logger.info(f"Final code after debugging:\n{final_code}")
+    
+    final_code = code
+    logger.info(f"Final code after debugging procedure using proof actions:\n{final_code}")
 
     return final_code, used_actions
 
 
 def debug_with_proof_actions(
-        verus_path: str,
-        file_path: str,
+        diag_hovers: List[Tuple[List[Range], Diagnostic]],
+        err: str,
         logger: Logger,
         lsp: SyncLanguageServer,
         llm: LLM,
@@ -194,8 +297,8 @@ def debug_with_proof_actions(
     Debugging the given code with proof actions.
 
     Args:
-        verus_path: Path to the Verus executable
-        file_path: Path to the Rust source file to analyze
+        diag_hovers: List of tuples containing ranges and diagnostics for hover actions
+        err: The error message from the Verus verifier
         logger: Logger instance for logging messages
         lsp: Language server instance for LSP operations
         llm: LLM instance for inference
@@ -210,9 +313,7 @@ def debug_with_proof_actions(
         The title of the proof action applied, or None if no action was taken.
     """
 
-    diags = run_verus(verus_path, file_path)
-
-    if not diags:
+    if not diag_hovers:
         logger.info("No diagnostics found.")
         return
     
@@ -220,17 +321,20 @@ def debug_with_proof_actions(
 
     # Run the LSP server
     with lsp.start_server():
-        for (ranges, diagnostics) in diags:
-                for r in ranges:
-                    try:
-                        result = lsp.request_code_actions(
-                            "./src/main.rs",
-                            r,
-                            diagnostics
-                        )
-                        code_actions.extend(result)
-                    except Exception as e:
-                        logger.error(f"Meet errors during requiring code actions: {e}")
+        for (ranges, diagnostic) in diag_hovers:
+            print(diagnostic["message"])
+            for r in ranges:
+                print(r["start"])
+                print(r["end"])
+                try:
+                    result = lsp.request_code_actions(
+                        "./src/main.rs",
+                        r,
+                        [diagnostic]
+                    )
+                    code_actions.extend(result)
+                except Exception as e:
+                    logger.error(f"Meet errors during requiring code actions: {e}")
                 
     proof_actions: List[CodeAction] = check_proof_actions(code_actions)
 
@@ -240,10 +344,6 @@ def debug_with_proof_actions(
 
     action_lines = [f"{i}: {action["title"]}" for i, action in enumerate(proof_actions)]
     actions_text = "\n".join(action_lines)
-
-    cmd = [verus_path, file_path]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    err = proc.stderr
 
     query = query.replace("<error>", err)
     query = query.replace("<proof_actions>", actions_text)
@@ -258,12 +358,17 @@ def debug_with_proof_actions(
 
     action_id = extract_code_blocks(action_id_text).strip()
 
-
     logger.info(f"Choose the {action_id}")
 
     try:
         action_id = int(action_id)
         logger.info(f"Selected action ID: {action_id}, title = {proof_actions[action_id]['title']}")
+
+        if proof_actions[action_id]["title"] == "Insert failing ensures clauses to the end":
+            # Special case for inserting failing ensures clauses
+            # TODO
+            logger.info("Inserted failing ensures clauses to the end of the code.")
+            return proof_actions[action_id]["title"]
 
         with lsp.start_server():
             is_edit: bool = lsp.apply_code_action(proof_actions[action_id])
@@ -282,46 +387,26 @@ def extract_code_blocks(response: str) -> str:
     else:
         return blocks[-1]
 
-def have_proof_action(
-    verus_path: str,
-    file_path: str,
-    logger: Logger,
-    lsp: SyncLanguageServer,
-) -> bool:
-    diags = run_verus(verus_path, file_path)
+def insert_failing_ensures(
+        code: str,
+        ensures: str,
+) -> str:
+    """
+    Insert the failing ensures clause at the end of the code.
 
-    if not diags:
-        logger.info("No diagnostics found.")
-        return
+    Args:
+        code: The source code as a string
+        ensures: The ensures clause to insert
     
-    code_actions: List[CodeAction] = []
+    Returns:
+        The modified code with the ensures clause inserted.
+    """
+    
+    # TODO
+    return code
 
-    # Run the LSP server
-    with lsp.start_server():
-        for (ranges, diagnostics) in diags:
-                for r in ranges:
-                    try:
-                        result = lsp.request_code_actions(
-                            "./src/main.rs",
-                            r,
-                            diagnostics
-                        )
-                        code_actions.extend(result)
-                    except Exception as e:
-                        logger.error(f"Meet errors during requiring code actions: {e}")
-                
-    proof_actions: List[CodeAction] = check_proof_actions(code_actions)
-
-    if len(proof_actions) == 0:
-        return False
-    else:
-        return True
 
 if __name__ == "__main__":
-
-    print(extract_code_blocks('The error indicates that the assertion `assert(fibo(i) <= fibo(j));` fails on line 27. Let\'s debug this step-by-step using the Proof Actions workflow.\n\n### Step 1: Apply "Move up assertion through statements"\nThe first action to take is **Move up assertion through statements**. This will lift the failing assertion above the preceding statements, allowing us to inspect the weakest precondition and identify why the assertion might fail.\n\n### Instructions:\n1. Hover over the `assert(fibo(i) <= fibo(j));` statement in your IDE.\n2. Apply the **Move up assertion through statements** Proof Action to lift the assertion. The verifier will attempt to generate an equivalent guard based on the preceding code.\n\nAfter applying this action, re-verify the code and report back the updated assertion or any new error messages.\n\nProof Action ID:\n```\n2\n```'))
-    
-
     import logging
     import json
     from utils import AttrDict
@@ -347,8 +432,8 @@ if __name__ == "__main__":
 fn main() {}
 
 verus!{
-spec fn fibo(n: nat) -> nat
-    decreases n
+spec fn fibo(n: nat) -> nat 
+	decreases n
 { 
 	if n == 0 { 0 } else if n == 1 { 1 } 
 	else { fibo((n - 2) as nat) + fibo((n - 1) as nat) } 
@@ -367,18 +452,17 @@ proof fn fibo_is_monotonic(i: nat, j: nat)
 		fibo_is_monotonic(i as nat, (j - 1) as nat);
 		fibo_is_monotonic(i as nat, (j - 2) as nat);
 	}
-	
-	assert(fibo(i) <= fibo(j));
+    assert(fibo(i) <= fibo(j));
 }
 }
 """
+    verus.set_verus_path(config.verus_path)
 
     engine = config.aoai_generation_model
 
     root_abs_path = "./rust_src"
 
     final_code, used_actions = debug_with_proof_actions_iter(
-        verus_path,
         code,
         logger,
         3,

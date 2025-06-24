@@ -7,6 +7,10 @@ import subprocess
 import tempfile
 import json
 from enum import Enum
+from typing import List
+
+from multilspy.lsp_protocol_handler.lsp_types import Diagnostic
+from multilspy.multilspy_types import Position, Range
 
 
 class VerusErrorType(Enum):
@@ -170,6 +174,36 @@ class VerusError:
                 span_texts += [f"{label}: {highlight_text}"]
         return "\n".join(traces) + "\n  " + "\n  ".join(span_texts)
 
+    def get_diagnostic(self) -> Diagnostic:
+        """
+        Returns a list of diagnostics for the error.
+        Each diagnostic contains the error message and the range of the error.
+        """
+        diagnostics = []
+        for t in self.trace:
+            if t.lines[0] == t.lines[1]:
+                # Single line error
+                diagnostic = Diagnostic(
+                    range=Range(
+                        start=Position(line=t.lines[0], character=t.text[0].hl_start - 1),
+                        end=Position(line=t.lines[0], character=t.text[0].hl_end - 1),
+                    ),
+                    severity=1,  # Error severity
+                    message=self.get_text(),
+                )
+            else:
+                # Multi-line error
+                diagnostic = Diagnostic(
+                    range=Range(
+                        start=Position(line=t.lines[0], character=0),
+                        end=Position(line=t.lines[1], character=0),
+                    ),
+                    severity=1,  # Error severity
+                    message=self.get_text(),
+                )
+            diagnostics.append(diagnostic)
+        return diagnostics[-1]
+
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, VerusError):
             return False
@@ -263,7 +297,7 @@ class VEval:
     def __init__(self, code, logger=None):
         self.logger = logger
         self.code = code
-        # JSON reported by verus, does not include detailed erros(which is reported from rustc)
+        # JSON reported by verus, does not include detailed errors(which is reported from rustc)
         self.verus_result = None
         # JSON reported by rustc, including any compliatoin errors and verus verification errors.
         # rustc reports multiple errors in multiple JSON objects to stderr.

@@ -10,83 +10,6 @@ import os
 from pprint import pprint
 
 from multilspy.multilspy_types import Position, Range
-from parse_errors import parse_verus_error
-
-def split_verus_errors(stderr_output: str) -> List[str]:
-    """
-    Split multiple Verus error messages from stderr output
-    
-    Args:
-        stderr_output: The complete stderr output from Verus
-        
-    Returns:
-        A list of individual error messages
-    """
-    # Pattern to identify the start of a new error message
-    error_start_pattern = r'(?:^|\n)error:'
-    
-    # Split the output by error start pattern
-    raw_splits = re.split(error_start_pattern, stderr_output)
-    
-    # First element might be empty or contain non-error output
-    if raw_splits and not raw_splits[0].strip():
-        raw_splits = raw_splits[1:]
-    
-    # Reconstruct the error messages with the "error:" prefix
-    errors = []
-    for i, split in enumerate(raw_splits):
-        if split.strip():
-            # Don't add "error:" prefix to the first element if it doesn't look like an error message
-            if re.search(f'aborting', split):
-                continue
-            if i == 0 and not re.search(r'--> .*:\d+:\d+', split.split('\n')[0]):
-                if 'error:' in stderr_output[:100]:  # Check if 'error:' is at the beginning
-                    errors.append(f"error:{split}")
-                else:
-                    errors.append(split)
-            else:
-                errors.append(f"error:{split}")
-            
-    return errors
-
-
-def run_verus(verus_path: str = "../verus/verus", file_path: str = "./test.rs") -> List[Tuple[List[Range], List[Diagnostic]]]:
-    """
-    Runs Verus on a given Rust source file and parses the output into
-    two lists: Ranges to hover and Diagnostics for errors.
-
-    Args:
-        verus_path: Path to the Verus executable
-        file_path: Path to the Rust source file to analyze
-
-    Returns:
-        out: A list of tuples, each containing:
-            - List of Ranges where the error occurred
-            - List of Diagnostics with error messages and severity
-    """
-    cmd = [verus_path, file_path]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    err = proc.stderr
-
-    errors = split_verus_errors(err)
-
-    print(f"Running Verus on {file_path} with command: {' '.join(cmd)}")
-    print(f"Verus stderr output:\n{err}")
-
-    ret: List[Tuple[List[Range], List[Diagnostic]]] = []
-    for err in errors:
-        parsed_error = parse_verus_error(err, file_path)
-        if parsed_error[0] and parsed_error[1]:
-            # Append the parsed error as a tuple of (ranges, diagnostics)
-            ret.append(parsed_error)
-
-    print(f"Parsed {len(ret)} Verus errors.")
-    print("Parsed errors:")
-    for ranges, diagnostics in ret:
-        print(f"Ranges: {ranges}")
-        print(f"Diagnostics: {diagnostics}")
-    return ret
-    
 
 def create_lsp(root_abs_path: str = "./rust_src") -> SyncLanguageServer:
     """
@@ -152,25 +75,6 @@ def main():
             text = lsp.get_open_file_text("./src/main.rs")
             print(text)
         print("\n")
-
-        ret_list = run_verus(verus_path="../verus/verus", file_path="./rust_src/src/main.rs")
-
-        print("Having run verus.\n")
-
-        for ret in ret_list:
-            ranges, diagnostics = ret
-            for r in ranges:
-                result = lsp.request_code_actions(
-                    "./src/main.rs",
-                    r,
-                    diagnostics
-                )
-                print(result)
-                result = check_proof_actions(result)
-                
-                if len(result) > 0:
-                    isEdit = lsp.apply_code_action(result[0])
-                break
 
 if __name__ == "__main__":
     main()
