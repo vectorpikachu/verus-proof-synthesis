@@ -9,6 +9,7 @@ import re
 import json
 import time
 from pathlib import Path
+from typing import List
 from infer import LLM
 from houdini import houdini
 from generation import Generation
@@ -40,7 +41,7 @@ class interGeneration:
     #TODO: this function was a bit a hack. 
     #   It is different from the generic repair agents we usually have, because we want it to leave `hints' for potential follow-up function specification refinement
     #   More systematic thinking is needed.
-    def aritherror_inference(self, code, temp=0.2, answer_num=1, errors: [VerusError] = []):
+    def aritherror_inference(self, code, temp=0.2, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         if errors==[]:
@@ -90,7 +91,7 @@ class interGeneration:
 
 
     ##Inter Procedural##
-    def direct_spec_inference(self, code, temp=0, answer_num=1, errors: [VerusError] = []):
+    def direct_spec_inference(self, code, temp=0, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Your mission is to add function pre- and post- conditions to the given Rust code in the form of `requires' (for pre-condition) and `ensures' (for post-condition), so that Verus can 
@@ -121,7 +122,7 @@ Again, you should NEVER add new variables, NEVER!
         return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
 
     #TODO: need parser support to reject changes beyond require clause
-    def direct_require_inference(self, code, temp=0, answer_num=1, errors: [VerusError] = []):
+    def direct_require_inference(self, code, temp=0, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Your mission is to add function pre-conditions to the given Rust code in the form of `requires'.
@@ -162,7 +163,7 @@ You should never change or delete any existing code.
 
 
     ##Inter Procedural##
-    def spec2assert_inference(self, code, temp=0, answer_num=1, errors: [VerusError] = []):
+    def spec2assert_inference(self, code, temp=0, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         if errors == []:
@@ -217,7 +218,7 @@ You should never change or delete any existing code.
         return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
 
 #Please add loop invariants to reflect the assert inside the loop
-    def assert2inv_inference(self, code, temp=0, answer_num=1, errors: [VerusError] = []):
+    def assert2inv_inference(self, code, temp=0, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
 #        instruction = """Your mission is to add loop invariants to the given Rust code so that Verus can prove every assert inside loops to be correct. Specifically, for every assert statement inside a loop like `assert!(E)', please add E as a loop invariant, inserted into the existing invariant block of the loop.
@@ -248,7 +249,7 @@ Again, you should NEVER add new variables, NEVER!
  #TODO: need parser support to make sure the changes are not beyond requires and ensures
 #Please add `requires' and `ensures' at the beginning of every function.
      ##Inter Procedural##
-    def assert2spec_inference(self, code, temp=0, answer_num=1, errors: [VerusError] = []):
+    def assert2spec_inference(self, code, temp=0, answer_num=1, errors: List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """
@@ -281,7 +282,7 @@ You should never change or delete any existing code.
         return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
 
      ##Inter Procedural##
-    def ensurerefine_inference(self, code, temp=0, answer_num=1, errors:[VerusError] = []):
+    def ensurerefine_inference(self, code, temp=0, answer_num=1, errors:List[VerusError] = []):
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 
         instruction = """Please check every function in the program.
@@ -310,7 +311,7 @@ You should NOT add ensures, if a function currently does not have ensures.
         return self.llm.infer_llm(self.config.aoai_generation_model, instruction, examples, code, system, answer_num=answer_num, max_tokens=self.config.max_token, temp=temp)
 
     ##Inter Procedural##
-    def removeexec_inference(self, code, temp=0, answer_num=1, errors:[VerusError]= []):
+    def removeexec_inference(self, code, temp=0, answer_num=1, errors:List[VerusError]= []):
         ###This one is not working very well. We should maybe only use it during diagnosis.
         system = "You are an experienced formal language programmer. You are very familiar with Verus, which is a tool for verifying the correctness of code written in Rust."
 

@@ -12,7 +12,7 @@
         {
             "id": "RustAnalyzer",
             "description": "RustAnalyzer for Linux (x64)",
-            "url": "https://github.com/verus-lang/verus-analyzer/releases/download/2025-06-10/verus-analyzer-x86_64-unknown-linux-gnu.gz",
+            "url": "https://github.com/verus-lang/verus-analyzer/releases/download/2025-04-25/verus-analyzer-x86_64-unknown-linux-gnu.gz",
             "platformId": "linux-x64",
             "archiveType": "gz",
             "binaryName": "verus-analyzer"
