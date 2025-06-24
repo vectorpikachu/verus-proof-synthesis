@@ -71,7 +71,7 @@ class LLM:
         temp=0.7,
         json=False,
         return_msg=False,
-        verbose=True,
+        verbose=False,
     ):
         """
         Args:

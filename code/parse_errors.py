@@ -74,11 +74,17 @@ def parse_verus_error(error_message: str, file_path: str = "./test.rs") -> Tuple
 
     # Get the source line and error indicator
     source_line = source_line_match.group(1)
-    indicator = source_line_match.group(3)
+    indicator_1 = source_line_match.group(2)
+    indicator_2 = source_line_match.group(3)
+    print(f"{indicator_1}, {indicator_2}")
 
     # Extract just the carets (^) from the indicator line
-    carets_match = re.search(r'(\^+)', indicator)
+    carets_match = re.search(r'(\^+)', indicator_1)
     if not carets_match:
+        carets_match = re.search(r'(\^+)', indicator_2)
+    
+    if not carets_match:
+        # If we can't find carets, we can't determine the range
         return [], []
     
     carets = carets_match.group(1)

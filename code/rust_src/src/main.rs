@@ -1,46 +1,34 @@
+
 use vstd::prelude::*;
 
 fn main() {}
 
 verus! {
-pub fn myfun(a: &mut Vec<i32>, sum: &mut Vec<i32>, N: i32)
-    requires
-        N > 0,
-        old(a).len() == N,
-        old(sum).len() == 1,
+
+fn find_first_odd(arr: &Vec<u32>) -> (index: Option<usize>)
     ensures
-        sum[0] == 2 * N,
-{
-    sum.set(0, 0);
-    let mut i: usize = 0;
-
-    while i < N as usize
-        invariant
-            i <= N as usize,
-            a.len() == N,
-            sum.len() == 1,
-            forall |j: usize| j < i ==> a[j as int] == 2,
-    {
-        a.set(i, 2);
-        i = i + 1;
-    }
-
-    i = 0;
-
-    while i < N as usize
-        invariant
-            i <= N as usize,
-            a.len() == N,
-            sum.len() == 1,
-            forall |j: usize| j < N ==> a[j as int] == 2,
-            sum[0] == 2 * i,
-    {
-        if a[i] == 2 {
-            sum.set(0, sum[0] + a[i]);
+        if let Some(idx) = index {
+            &&& arr@.take(idx as int) == arr@.take(idx as int).filter(|x: u32| x % 2 == 0)
+            &&& arr[idx as int] % 2 != 0
         } else {
-            sum.set(0, sum[0] * a[i]);
+            forall|k: int| 0 <= k < arr.len() ==> (arr[k] % 2 == 0)
+        },
+{
+    let input_len = arr.len();
+    let mut index = 0;
+
+    while index < arr.len()
+        invariant
+            index <= arr.len(),
+            forall |k: int| 0 <= k < arr.len() ==> (arr[k] % 2 == 0), // Modified to cover all elements because `arr` is never changed in the loop
+            arr.len() == input_len, // Loop invariant specifying the length of `arr`
+    {
+        if (arr[index] % 2 != 0) {
+            return Some(index);
         }
-        i = i + 1;
+        index += 1;
     }
+    None
 }
-}
+
+} // verus!
