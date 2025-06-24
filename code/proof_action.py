@@ -105,7 +105,7 @@ def debug_with_proof_actions_iter(
         llm: LLM,
         engine: str,
         root_abs_path: str = "./rust_src",
-    ) -> bool:
+    ) -> Tuple[str, str]:
     """
     Debugging the given code with proof actions iteratively.
 

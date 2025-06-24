@@ -810,7 +810,30 @@ Here are some principles that you have to follow:
                     code = original_code
 
         # TODO! Add a step of proof action application.
-        
+        from proof_action import debug_with_proof_actions_iter
+        final_code, used_actions = debug_with_proof_actions_iter(
+            code,
+            self.logger,
+            3,
+            self.llm,
+            "./rust_src"
+        )
+
+        import pandas as pd
+        with open("proof_actions.txt", "w") as f:
+            f.write("Used actions: " + str(used_actions) + "\n")
+        try:
+            df = pd.read_csv("proof_actions.csv")
+        except FileNotFoundError:
+            # 文件不存在时初始化空表
+            df = pd.DataFrame(columns=["name", "verified"])
+
+        # 追加新行
+        df.loc[len(df)] = len(used_actions)
+
+        # 写回文件（覆盖写入）
+        df.to_csv("proof_actions.csv", index=False)
+            
         
         if repair_steps > 0:
             (temp_dir / "before-repair.rs").write_text(

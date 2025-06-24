@@ -15,18 +15,30 @@ def row_exists(csv_path, name):
     except FileNotFoundError:
         return False
 
+count = 0
 # 创建并打开 CSV 文件，准备写入 header 和每个未验证文件的路径
 with open(csv_path, mode="a", newline="") as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(["name", "has_proof_function"])  # 写入表头
+    writer.writerow(["name", "has_proof_actions"])  # 写入表头
 
     # 遍历符合条件的 rs 文件
     for dir1 in benchmark_root.iterdir():
+
+        if count >= 10:
+            break
+
         unverified_dir = dir1 / "unverified"
         if not unverified_dir.exists():
             continue
+        outdir = dir1 / "out"
+        if not outdir.exists():
+            outdir.mkdir(parents=True)
 
         for rs_file in unverified_dir.glob("*.rs"):
+
+            if count >= 20:
+                break
+
             rs_path_str = str(rs_file.resolve())
 
             # 写入路径和初始的 False
@@ -36,6 +48,9 @@ with open(csv_path, mode="a", newline="") as csvfile:
             subprocess.run([
                 "uv", "run", "main.py",
                 "--input", rs_path_str,
-                "--output", rs_path_str + "-out.rs",
+                "--output", outdir / f"{rs_file.stem}-out.rs",
                 "--config", "config.json"
             ])
+
+            count += 1
+
